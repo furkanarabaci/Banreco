@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Banreco</string>
+    <string name="take_picture">Take picture</string>
 </resources>
