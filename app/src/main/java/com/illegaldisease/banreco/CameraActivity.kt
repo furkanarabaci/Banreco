@@ -134,11 +134,9 @@ class CameraActivity : AppCompatActivity() {
         try {
             val characteristics = manager.getCameraCharacteristics(cameraDevice!!.id)
             var jpegSizes: Array<Size>? = null
-            if (characteristics != null) {
-                jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)!!.getOutputSizes(ImageFormat.JPEG)
-            }
+            jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)!!.getOutputSizes(ImageFormat.JPEG)
             var width = 640
-            var height = 480
+            var height = 480 //Default sizes.
             if (jpegSizes != null && 0 < jpegSizes.size) {
                 width = jpegSizes[0].width
                 height = jpegSizes[0].height
@@ -153,41 +151,7 @@ class CameraActivity : AppCompatActivity() {
             // Orientation
             val rotation = windowManager.defaultDisplay.rotation
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation))
-            val file = File(Environment.getExternalStorageDirectory().toString() + "/pic.jpg")
-            val readerListener = object : ImageReader.OnImageAvailableListener {
-                override fun onImageAvailable(reader: ImageReader) {
-                    var image: Image? = null
-                    try {
-                        image = reader.acquireLatestImage()
-                        val buffer = image!!.planes[0].buffer
-                        val bytes = ByteArray(buffer.capacity())
-                        buffer.get(bytes)
-                        save(bytes)
-                    } catch (e: FileNotFoundException) {
-                        e.printStackTrace()
-                    } catch (e: IOException) {
-                        e.printStackTrace()
-                    } finally {
-                        if (image != null) {
-                            image.close()
-                        }
-                    }
-                }
-
-                @Throws(IOException::class)
-                private fun save(bytes: ByteArray) {
-                    var output: OutputStream? = null
-                    try {
-                        output = FileOutputStream(file)
-                        output.write(bytes)
-                    } finally {
-                        if (null != output) {
-                            output.close()
-                        }
-                    }
-                }
-            }
-            reader.setOnImageAvailableListener(readerListener, mBackgroundHandler)
+            SaveFileToStorage(reader)
             val captureListener = object : CameraCaptureSession.CaptureCallback() {
                 override fun onCaptureCompleted(session: CameraCaptureSession, request: CaptureRequest, result: TotalCaptureResult) {
                     super.onCaptureCompleted(session, request, result)
@@ -210,9 +174,44 @@ class CameraActivity : AppCompatActivity() {
         } catch (e: CameraAccessException) {
             e.printStackTrace()
         }
-
     }
+    protected fun SaveFileToStorage(reader: ImageReader){
+        val file = File(Environment.getExternalStorageDirectory().toString() + "/testing.jpg") //TODO: Declare this differently to prevent overwriting.
+        val readerListener = object : ImageReader.OnImageAvailableListener {
+            override fun onImageAvailable(reader: ImageReader) {
+                var image: Image? = null
+                try {
+                    image = reader.acquireLatestImage()
+                    val buffer = image!!.planes[0].buffer
+                    val bytes = ByteArray(buffer.capacity())
+                    buffer.get(bytes)
+                    save(bytes)
+                } catch (e: FileNotFoundException) {
+                    e.printStackTrace()
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                } finally {
+                    if (image != null) {
+                        image.close()
+                    }
+                }
+            }
 
+            @Throws(IOException::class)
+            private fun save(bytes: ByteArray) {
+                var output: OutputStream? = null
+                try {
+                    output = FileOutputStream(file)
+                    output.write(bytes)
+                } finally {
+                    if (null != output) {
+                        output.close()
+                    }
+                }
+            }
+        }
+        reader.setOnImageAvailableListener(readerListener, mBackgroundHandler)
+    }
     protected fun createCameraPreview() {
         try {
             val texture = textureView!!.surfaceTexture!!
