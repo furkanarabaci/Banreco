@@ -21,6 +21,7 @@ import android.os.Environment
 import android.os.Handler
 import android.os.HandlerThread
 import android.support.annotation.NonNull
+import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
@@ -42,7 +43,7 @@ import java.util.Arrays
 import kotlin.collections.List;
 
 class CameraActivity : AppCompatActivity() {
-    private var takePictureButton: Button? = null
+    private var takePictureButton: FloatingActionButton? = null
     private var textureView: TextureView? = null
     private var cameraId: String? = null
     protected var cameraDevice: CameraDevice? = null
@@ -102,8 +103,7 @@ class CameraActivity : AppCompatActivity() {
         textureView = findViewById<View>(R.id.texture) as TextureView
         assert(textureView != null)
         textureView!!.surfaceTextureListener = textureListener
-        takePictureButton = findViewById<View>(R.id.btn_takepicture) as Button
-        assert(takePictureButton != null)
+        takePictureButton = findViewById(R.id.fab_take_photo) as FloatingActionButton
         takePictureButton!!.setOnClickListener { takePicture() }
     }
 
@@ -314,6 +314,18 @@ class CameraActivity : AppCompatActivity() {
         super.onPause()
     }
 
+    override fun onStop() {
+        super.onStop()
+        closeCamera()
+        closeBackGroundThread()
+    }
+    private fun closeBackGroundThread(){
+        if(mBackgroundThread != null){
+            mBackgroundThread!!.quitSafely() //I think we are double-checking null thingy, so very well.
+            mBackgroundThread = null
+            mBackgroundHandler = null
+        }
+    }
     companion object {
         private val TAG = "CameraActivity"
         private val ORIENTATIONS = SparseIntArray()
