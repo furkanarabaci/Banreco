@@ -2,4 +2,5 @@
     <string name="app_name">Banreco</string>
     <string name="open">Open</string>
     <string name="close">Close</string>
+<string name="take_picture">Take picture</string>
 </resources>
