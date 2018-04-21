@@ -24,6 +24,8 @@ import android.support.annotation.NonNull
 import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
+import android.support.v4.widget.DrawerLayout
+import android.support.v7.app.ActionBarDrawerToggle
 import android.util.Log
 import android.util.Size
 import android.util.SparseIntArray
@@ -41,7 +43,6 @@ import java.nio.ByteBuffer
 import java.util.ArrayList
 import java.util.Arrays
 import kotlin.collections.List;
-
 class CameraActivity : AppCompatActivity() {
     private var takePictureButton: FloatingActionButton? = null
     private var textureView: TextureView? = null
@@ -97,9 +98,13 @@ class CameraActivity : AppCompatActivity() {
         }
     }
 
+    private var mDrawerLayout: DrawerLayout? = null
+
+    private var mToggle: ActionBarDrawerToggle? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_camera)
+        setContentView(R.layout.activity_camera
         textureView = findViewById<View>(R.id.texture) as TextureView
         assert(textureView != null)
         textureView!!.surfaceTextureListener = textureListener
