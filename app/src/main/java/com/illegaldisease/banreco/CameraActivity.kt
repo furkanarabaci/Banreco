@@ -20,6 +20,7 @@ import android.os.Environment
 import android.os.Handler
 import android.os.HandlerThread
 import android.support.design.widget.FloatingActionButton
+import android.support.design.widget.NavigationView
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
@@ -36,6 +37,7 @@ import java.io.IOException
 import java.io.OutputStream
 import java.util.ArrayList
 import java.util.Arrays
+
 class CameraActivity : AppCompatActivity() {
     private var takePictureButton: FloatingActionButton? = null
     private var textureView: TextureView? = null
@@ -103,6 +105,27 @@ class CameraActivity : AppCompatActivity() {
         textureView!!.surfaceTextureListener = textureListener
         takePictureButton = findViewById<View>(R.id.fab_take_photo) as FloatingActionButton
         takePictureButton!!.setOnClickListener { takePicture() }
+        val navigation = findViewById<View>(R.id.nav_view) as NavigationView
+        navigation.setNavigationItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_calendar ->
+                    //Opens a google calendar instance.
+                    true
+                R.id.nav_settings ->
+                    //Will be empty for now
+                    true
+                R.id.nav_about ->
+                    //Will be empty for now
+                    true
+                R.id.nav_logs ->
+                    //Will open a new activity to show old banners
+                    true
+                R.id.nav_rate ->
+                    //Will be empty. We wont deploy to google play.
+                    true
+                else -> false
+            }
+        }
     }
 
     private fun startBackgroundThread() {

@@ -3,4 +3,9 @@
     <string name="open">Open</string>
     <string name="close">Close</string>
     <string name="take_picture">Take picture</string>
+    <string name="calendar">Takvim</string>
+    <string name="settings">Ayarlar</string>
+    <string name="logs">Geçmiş Kayıtlar</string>
+    <string name="about">Hakkında</string>
+    <string name="rate">Puan : ★★★★★</string>
 </resources>
