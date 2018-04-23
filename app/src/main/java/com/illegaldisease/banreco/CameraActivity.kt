@@ -1,6 +1,6 @@
 package com.illegaldisease.banreco
 
-import android.Manifest;
+import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.ImageFormat
@@ -13,51 +13,44 @@ import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.TotalCaptureResult
-import android.hardware.camera2.params.StreamConfigurationMap
 import android.media.Image
 import android.media.ImageReader
 import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
 import android.os.HandlerThread
-import android.support.annotation.NonNull
 import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
-import android.support.v4.widget.DrawerLayout
-import android.support.v7.app.ActionBarDrawerToggle
 import android.util.Log
 import android.util.Size
 import android.util.SparseIntArray
 import android.view.Surface
 import android.view.TextureView
 import android.view.View
-import android.widget.Button
 import android.widget.Toast
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
-import java.nio.ByteBuffer
 import java.util.ArrayList
 import java.util.Arrays
-import kotlin.collections.List;
 class CameraActivity : AppCompatActivity() {
     private var takePictureButton: FloatingActionButton? = null
     private var textureView: TextureView? = null
     private var cameraId: String? = null
-    protected var cameraDevice: CameraDevice? = null
-    protected lateinit var cameraCaptureSessions: CameraCaptureSession
-    protected var captureRequest: CaptureRequest? = null
-    protected lateinit var captureRequestBuilder: CaptureRequest.Builder
+    private var cameraDevice: CameraDevice? = null
+    private lateinit var cameraCaptureSessions: CameraCaptureSession
+//    private var captureRequest: CaptureRequest? = null
+    private lateinit var captureRequestBuilder: CaptureRequest.Builder
     private var imageDimension: Size? = null
     private var imageReader: ImageReader? = null
     private val file: File? = null
-    private val mFlashSupported: Boolean = false
+//    private val mFlashSupported: Boolean = false
     private var mBackgroundHandler: Handler? = null
     private var mBackgroundThread: HandlerThread? = null
-    internal var textureListener: TextureView.SurfaceTextureListener = object : TextureView.SurfaceTextureListener {
+    private var textureListener: TextureView.SurfaceTextureListener = object : TextureView.SurfaceTextureListener {
         override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
             //open your camera here
             openCamera()
@@ -90,35 +83,35 @@ class CameraActivity : AppCompatActivity() {
             cameraDevice = null
         }
     }
-    internal val captureCallbackListener: CameraCaptureSession.CaptureCallback = object : CameraCaptureSession.CaptureCallback() {
-        override fun onCaptureCompleted(session: CameraCaptureSession, request: CaptureRequest, result: TotalCaptureResult) {
-            super.onCaptureCompleted(session, request, result)
-            Toast.makeText(this@CameraActivity, "Saved:" + file!!, Toast.LENGTH_SHORT).show()
-            createCameraPreview()
-        }
-    }
+//    internal val captureCallbackListener: CameraCaptureSession.CaptureCallback = object : CameraCaptureSession.CaptureCallback() {
+//        override fun onCaptureCompleted(session: CameraCaptureSession, request: CaptureRequest, result: TotalCaptureResult) {
+//            super.onCaptureCompleted(session, request, result)
+//            Toast.makeText(this@CameraActivity, "Saved:" + file!!, Toast.LENGTH_SHORT).show()
+//            createCameraPreview()
+//        }
+//    }
 
-    private var mDrawerLayout: DrawerLayout? = null
-
-    private var mToggle: ActionBarDrawerToggle? = null
+//    private var mDrawerLayout: DrawerLayout? = null
+//
+//    private var mToggle: ActionBarDrawerToggle? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_camera
+        setContentView(R.layout.activity_camera)
         textureView = findViewById<View>(R.id.texture) as TextureView
         assert(textureView != null)
         textureView!!.surfaceTextureListener = textureListener
-        takePictureButton = findViewById(R.id.fab_take_photo) as FloatingActionButton
+        takePictureButton = findViewById<View>(R.id.fab_take_photo) as FloatingActionButton
         takePictureButton!!.setOnClickListener { takePicture() }
     }
 
-    protected fun startBackgroundThread() {
+    private fun startBackgroundThread() {
         mBackgroundThread = HandlerThread("Camera Background")
         mBackgroundThread!!.start()
         mBackgroundHandler = Handler(mBackgroundThread!!.looper)
     }
 
-    protected fun stopBackgroundThread() {
+    private fun stopBackgroundThread() {
         mBackgroundThread!!.quitSafely()
         try {
             mBackgroundThread!!.join()
@@ -130,7 +123,7 @@ class CameraActivity : AppCompatActivity() {
 
     }
 
-    protected fun takePicture() {
+    private fun takePicture() {
         if (null == cameraDevice) {
             Log.e(TAG, "cameraDevice is null")
             return
@@ -138,11 +131,10 @@ class CameraActivity : AppCompatActivity() {
         val manager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
         try {
             val characteristics = manager.getCameraCharacteristics(cameraDevice!!.id)
-            var jpegSizes: Array<Size>? = null
-            jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)!!.getOutputSizes(ImageFormat.JPEG)
+            val jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)!!.getOutputSizes(ImageFormat.JPEG)
             var width = 640
             var height = 480 //Default sizes.
-            if (jpegSizes != null && 0 < jpegSizes.size) {
+            if (jpegSizes != null && jpegSizes.isNotEmpty()) {
                 width = jpegSizes[0].width
                 height = jpegSizes[0].height
             }
@@ -156,7 +148,7 @@ class CameraActivity : AppCompatActivity() {
             // Orientation
             val rotation = windowManager.defaultDisplay.rotation
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation))
-            SaveFileToStorage(reader)
+            saveFileToStorage(reader)
             val captureListener = object : CameraCaptureSession.CaptureCallback() {
                 override fun onCaptureCompleted(session: CameraCaptureSession, request: CaptureRequest, result: TotalCaptureResult) {
                     super.onCaptureCompleted(session, request, result)
@@ -180,7 +172,7 @@ class CameraActivity : AppCompatActivity() {
             e.printStackTrace()
         }
     }
-    protected fun SaveFileToStorage(reader: ImageReader){
+    private fun saveFileToStorage(reader: ImageReader){
         val file = File(Environment.getExternalStorageDirectory().toString() + "/testing.jpg") //TODO: Declare this differently to prevent overwriting.
         val readerListener = object : ImageReader.OnImageAvailableListener {
             override fun onImageAvailable(reader: ImageReader) {
@@ -217,7 +209,7 @@ class CameraActivity : AppCompatActivity() {
         }
         reader.setOnImageAvailableListener(readerListener, mBackgroundHandler)
     }
-    protected fun createCameraPreview() {
+    private fun createCameraPreview() {
         try {
             val texture = textureView!!.surfaceTexture!!
             texture.setDefaultBufferSize(imageDimension!!.width, imageDimension!!.height)
@@ -266,7 +258,7 @@ class CameraActivity : AppCompatActivity() {
         Log.e(TAG, "openCamera X")
     }
 
-    protected fun updatePreview() {
+    private fun updatePreview() {
         if (null == cameraDevice) {
             Log.e(TAG, "updatePreview error, return")
         }
@@ -331,7 +323,7 @@ class CameraActivity : AppCompatActivity() {
         }
     }
     companion object {
-        private val TAG = "CameraActivity"
+        private const val TAG = "CameraActivity"
         private val ORIENTATIONS = SparseIntArray()
 
         init {
@@ -341,6 +333,6 @@ class CameraActivity : AppCompatActivity() {
             ORIENTATIONS.append(Surface.ROTATION_270, 180)
         }
 
-        private val REQUEST_CAMERA_PERMISSION = 200
+        private const val REQUEST_CAMERA_PERMISSION = 200
     }
 }
