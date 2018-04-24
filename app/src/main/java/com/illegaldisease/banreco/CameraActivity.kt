@@ -2,6 +2,7 @@ package com.illegaldisease.banreco
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.ImageFormat
 import android.graphics.SurfaceTexture
@@ -29,6 +30,7 @@ import android.util.SparseIntArray
 import android.view.Surface
 import android.view.TextureView
 import android.view.View
+import android.view.WindowManager
 import android.widget.Toast
 import java.io.File
 import java.io.FileNotFoundException
@@ -99,6 +101,7 @@ class CameraActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         setContentView(R.layout.activity_camera)
         textureView = findViewById<View>(R.id.texture) as TextureView
         assert(textureView != null)
@@ -117,9 +120,11 @@ class CameraActivity : AppCompatActivity() {
                 R.id.nav_about ->
                     //Will be empty for now
                     true
-                R.id.nav_logs ->
-                    //Will open a new activity to show old banners
+                R.id.nav_logs -> {
+                    startActivity(Intent(this@CameraActivity, LogsActivity::class.java))
                     true
+                }
+
                 R.id.nav_rate ->
                     //Will be empty. We wont deploy to google play.
                     true

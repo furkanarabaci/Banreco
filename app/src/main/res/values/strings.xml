@@ -8,4 +8,5 @@
     <string name="logs">Geçmiş Kayıtlar</string>
     <string name="about">Hakkında</string>
     <string name="rate">Puan : ★★★★★</string>
+    <string name="title_activity_logs">LogsActivity</string>
 </resources>
