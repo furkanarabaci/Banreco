@@ -4,7 +4,7 @@
     <item xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/nav_settings" android:title="@string/settings" android:icon="@drawable/ic_settings_black_24dp"/>
     <item xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/nav_logs" android:title="@string/logs"  android:icon="@drawable/ic_archive_black_24dp" />
     <item xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/nav_about" android:title="@string/about"  android:icon="@drawable/ic_more_black_24dp"/>
-    <item xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/nav_rate" android:title="@string/about"  android:icon="@drawable/ic_star_border_black_24dp">
+    <item xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/nav_rate" android:title="@string/rate"  android:icon="@drawable/ic_star_border_black_24dp">
 
 
 </item>

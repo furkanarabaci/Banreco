@@ -23,6 +23,7 @@ import android.os.HandlerThread
 import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.NavigationView
 import android.support.v4.app.ActivityCompat
+import android.support.v4.app.ActivityCompat.checkSelfPermission
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.util.Size
@@ -37,6 +38,7 @@ import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
+import java.net.ConnectException
 import java.util.ArrayList
 import java.util.Arrays
 
@@ -180,7 +182,7 @@ class CameraActivity : AppCompatActivity() {
             val captureListener = object : CameraCaptureSession.CaptureCallback() {
                 override fun onCaptureCompleted(session: CameraCaptureSession, request: CaptureRequest, result: TotalCaptureResult) {
                     super.onCaptureCompleted(session, request, result)
-                    Toast.makeText(this@CameraActivity, "Saved:$file", Toast.LENGTH_SHORT).show()
+
                     createCameraPreview()
                 }
             }
@@ -201,7 +203,7 @@ class CameraActivity : AppCompatActivity() {
         }
     }
     private fun saveFileToStorage(reader: ImageReader){
-        val file = File(Environment.getExternalStorageDirectory().toString() + "/testing.jpg") //TODO: Declare this differently to prevent overwriting.
+        val file = File(filesDir.toString() + "/testing.jpg") //TODO: Declare this differently to prevent overwriting.
         val readerListener = object : ImageReader.OnImageAvailableListener {
             override fun onImageAvailable(reader: ImageReader) {
                 var image: Image? = null
@@ -211,13 +213,15 @@ class CameraActivity : AppCompatActivity() {
                     val bytes = ByteArray(buffer.capacity())
                     buffer.get(bytes)
                     save(bytes)
+                    Toast.makeText(this@CameraActivity, "Saved to :$file", Toast.LENGTH_LONG).show()
                 } catch (e: FileNotFoundException) {
                     e.printStackTrace()
+                    Toast.makeText(this@CameraActivity, "Some error has occured.", Toast.LENGTH_LONG).show()
                 } catch (e: IOException) {
                     e.printStackTrace()
+                    Toast.makeText(this@CameraActivity, "Could not save to :$file", Toast.LENGTH_LONG).show()
                 } finally {
                     if (image != null) {
-                        image.close()
                     }
                 }
             }
@@ -227,7 +231,7 @@ class CameraActivity : AppCompatActivity() {
                 var output: OutputStream? = null
                 try {
                     output = FileOutputStream(file)
-                    output.write(bytes)
+                    output!!.write(bytes)
                 } finally {
                     if (null != output) {
                         output.close()
@@ -274,8 +278,8 @@ class CameraActivity : AppCompatActivity() {
             val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)!!
             imageDimension = map.getOutputSizes(SurfaceTexture::class.java)[0]
             // Add permission for camera and let user grant the permission
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this@CameraActivity, arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_CAMERA_PERMISSION)
+            if (checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this@CameraActivity, arrayOf(Manifest.permission.CAMERA), REQUEST_CAMERA_PERMISSION)
                 return
             }
             manager.openCamera(cameraId!!, stateCallback, null)
