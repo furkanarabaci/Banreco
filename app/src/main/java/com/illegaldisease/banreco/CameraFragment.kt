@@ -40,7 +40,6 @@ class CameraFragment : Fragment() {
         override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
             //open your camera here
             openCamera()
-
         }
 
         override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
