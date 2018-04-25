@@ -33,7 +33,7 @@ class CameraActivity : AppCompatActivity() {
         drawer {
             //TODO: Add some icons and fill out onclick
             secondaryItem(getString(R.string.drawer_events)) {
-
+                icon = R.drawable.navigation_empty_icon
             }
             secondaryItem(getString(R.string.drawer_calendar)) {
                 icon = R.drawable.ic_date_range_black_24dp
