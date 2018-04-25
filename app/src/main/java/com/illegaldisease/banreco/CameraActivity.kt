@@ -1,11 +1,14 @@
 package com.illegaldisease.banreco
 
+import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.WindowManager
+import co.zsmb.materialdrawerkt.builders.accountHeader
 import co.zsmb.materialdrawerkt.builders.drawer
 import co.zsmb.materialdrawerkt.draweritems.badgeable.secondaryItem
 import co.zsmb.materialdrawerkt.draweritems.divider
+import co.zsmb.materialdrawerkt.draweritems.profile.profile
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -29,31 +32,63 @@ class CameraActivity : AppCompatActivity() {
         checkSignIn() // Attempts to login with async callbacks. be careful.
     }
     private fun initializeDrawerBar(){
-        //Be careful, i don't handle outofrange exceptions.
         drawer {
-            //TODO: Add some icons and fill out onclick
+            accountHeader{
+                background = R.drawable.background //TODO: Could find better background.
+                profile("placeholder","placeholder@hold.me"){
+                    icon = R.drawable.photo1 //TODO: Change placeholders with google sign in thingy.
+                }
+            }
             secondaryItem(getString(R.string.drawer_events)) {
                 icon = R.drawable.ic_event_available_black_24dp
+                onClick {_ ->
+                    startActivity(Intent(this@CameraActivity,EventsActivity :: class.java))
+                    false
+                }
             }
             secondaryItem(getString(R.string.drawer_calendar)) {
                 icon = R.drawable.ic_date_range_black_24dp
+                onClick {_ ->
+                    //TODO: Connect to calender here.
+                    false
+                }
             }
             secondaryItem(getString(R.string.drawer_settings)) {
                 icon = R.drawable.ic_settings_black_24dp
+                onClick {_ ->
+                    startActivity(Intent(this@CameraActivity,SettingsActivity :: class.java))
+                    false
+                }
             }
             secondaryItem(getString(R.string.drawer_logs)) {
                 icon = R.drawable.ic_archive_black_24dp
+                onClick {_ ->
+                    startActivity(Intent(this@CameraActivity,LogsActivity :: class.java))
+                    false
+                }
             }
             secondaryItem(getString(R.string.drawer_about)) {
                 icon = R.drawable.ic_more_black_24dp
+                onClick {_ ->
+                    //I don't care, leave it empty
+                    false
+                }
             }
-            divider {  }
             secondaryItem(getString(R.string.drawer_rate)) {
                 icon = R.drawable.ic_star_border_black_24dp
+                onClick { _ ->
+                    //Fill here if you put this on google play
+                    false
+                }
             }
             divider {  }
             secondaryItem(getString(R.string.drawer_logout)) {
                 icon = R.drawable.ic_exit_to_app_black_24dp
+                onClick {_ ->
+                    finish()
+                    System.exit(0) //Exit with success
+                    false
+                }
             }
         }
     }
