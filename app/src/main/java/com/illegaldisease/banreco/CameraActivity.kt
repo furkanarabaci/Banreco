@@ -47,6 +47,7 @@ class CameraActivity : AppCompatActivity() {
             secondaryItem(getString(R.string.drawer_about)) {
                 icon = R.drawable.ic_more_black_24dp
             }
+            divider {  }
             secondaryItem(getString(R.string.drawer_rate)) {
                 icon = R.drawable.ic_star_border_black_24dp
             }
