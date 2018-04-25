@@ -10,12 +10,17 @@ import co.zsmb.materialdrawerkt.draweritems.badgeable.secondaryItem
 import co.zsmb.materialdrawerkt.draweritems.divider
 import co.zsmb.materialdrawerkt.draweritems.profile.profile
 import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import co.zsmb.materialdrawerkt.imageloader.drawerImageLoader
+import com.mikepenz.materialdrawer.util.DrawerUIUtils
+import com.squareup.picasso.Picasso
 
 class CameraActivity : AppCompatActivity() {
-
+    private val RC_SIGN_IN = 9001
     private var mGoogleSignInClient : GoogleSignInClient? = null
+    private var signInAccount : GoogleSignInAccount? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,7 +30,22 @@ class CameraActivity : AppCompatActivity() {
                 .requestEmail()
                 .build()
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
-        initializeDrawerBar()
+        //initializeDrawerBar() Commented out until i find a way to update drawer runtime
+        drawerImageLoader {
+            placeholder { ctx, tag ->
+                DrawerUIUtils.getPlaceHolder(ctx)
+            }
+            set { imageView, uri, placeholder, tag ->
+                Picasso.with(imageView.context)
+                        .load(uri)
+                        .placeholder(placeholder)
+                        .into(imageView)
+            }
+            cancel { imageView ->
+                Picasso.with(imageView.context)
+                        .cancelRequest(imageView)
+            }
+        }
     }
     override fun onStart() {
         super.onStart()
@@ -35,7 +55,8 @@ class CameraActivity : AppCompatActivity() {
         drawer {
             accountHeader{
                 background = R.drawable.background //TODO: Could find better background.
-                profile("placeholder","placeholder@hold.me"){
+                profile(signInAccount!!.displayName.toString(),signInAccount!!.email.toString()){
+
                     icon = R.drawable.photo1 //TODO: Change placeholders with google sign in thingy.
                 }
             }
@@ -96,20 +117,35 @@ class CameraActivity : AppCompatActivity() {
         val task = mGoogleSignInClient!!.silentSignIn()
         if (task.isSuccessful) {
             // There's immediate result available.
-            val signInAccount = task.result
-            //TODO: Immediate result. Call your navbar update here.
+            signInAccount = task.result
+            initializeDrawerBar()
         } else {
             // There's no immediate result ready, displays some progress indicator and waits for the
             // async callback.
             //TODO: I don't know, maybe show some animation when waiting to log in ?
             task.addOnCompleteListener(this){ signIntask ->
                 if(signIntask.isSuccessful){
-                    //TODO: Call navigation drawer update here again.
+                    signInAccount = task.result
+                    initializeDrawerBar()
                 }
                 else{
-                    //It is failed. Send some errors or i don't know. Break their heads ?2=
+                    //It is failed. Send some errors or i don't know. Maybe prompt sign in ?
+                    signInToGoogle() //Result is async.
                 }
             }
+        }
+    }
+    private fun signInToGoogle(){
+        val signInIntent = mGoogleSignInClient!!.signInIntent
+        startActivityForResult(signInIntent, RC_SIGN_IN)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if(requestCode == RC_SIGN_IN){
+            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+            signInAccount = task.result //This is newly signed in user.
+            initializeDrawerBar()
         }
     }
 }
