@@ -3,10 +3,12 @@
     <string name="open">Open</string>
     <string name="close">Close</string>
     <string name="take_picture">Take picture</string>
-    <string name="calendar">Takvim</string>
-    <string name="settings">Ayarlar</string>
-    <string name="logs">Geçmiş Kayıtlar</string>
-    <string name="about">Hakkında</string>
-    <string name="rate">Puan : ★★★★★</string>
+    <string name="drawer_logout">Çıkış</string>
+    <string name="drawer_events">Gelecek Etkinlikler</string>
+    <string name="drawer_calendar">Takvim</string>
+    <string name="drawer_settings">Ayarlar</string>
+    <string name="drawer_logs">Geçmiş Kayıtlar</string>
+    <string name="drawer_about">Hakkında</string>
+    <string name="drawer_rate">Puan : ★★★★★</string>
     <string name="title_activity_logs">LogsActivity</string>
 </resources>
