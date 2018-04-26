@@ -32,7 +32,6 @@ class CameraFragment : Fragment() {
     private lateinit var captureRequestBuilder: CaptureRequest.Builder
     private var imageDimension: Size? = null
     private var imageReader: ImageReader? = null
-    private val file: File? = null
     //    private val mFlashSupported: Boolean = false
     private var mBackgroundHandler: Handler? = null
     private var mBackgroundThread: HandlerThread? = null
@@ -151,7 +150,7 @@ class CameraFragment : Fragment() {
         }
     }
     private fun saveFileToStorage(reader: ImageReader){
-        val file = File(activity.filesDir.toString() + "/testing.jpg") //TODO: Declare this differently to prevent overwriting.
+        val file = File(activity.filesDir.toString() + "/" + System.currentTimeMillis().toString()) //Now we guaranteed it to be unique.
         val readerListener = object : ImageReader.OnImageAvailableListener {
             override fun onImageAvailable(reader: ImageReader) {
                 var image: Image? = null
@@ -164,7 +163,7 @@ class CameraFragment : Fragment() {
                     Toast.makeText(activity, "Saved to :$file", Toast.LENGTH_LONG).show()
                 } catch (e: FileNotFoundException) {
                     e.printStackTrace()
-                    Toast.makeText(activity, "Some error has occured.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(activity, "Some error has occurred.", Toast.LENGTH_LONG).show()
                 } catch (e: IOException) {
                     e.printStackTrace()
                     Toast.makeText(activity, "Could not save to :$file", Toast.LENGTH_LONG).show()

@@ -13,16 +13,27 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import android.net.ConnectivityManager
+import android.net.Uri
+import android.util.Log
+import com.illegaldisease.banreco.R.mipmap.ic_launcher
+import android.content.ContentResolver
+
+
 
 class CameraActivity : AppCompatActivity() {
-    private val RC_SIGN_IN = 9001
+
     private var mGoogleSignInClient : GoogleSignInClient? = null
     private var signInAccount : GoogleSignInAccount? = null
+    private var placeHolderUri : Uri? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         setContentView(R.layout.activity_camera)
+        placeHolderUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE +
+                "://" + resources.getResourcePackageName(R.drawable.photo1)
+                + '/'.toString() + resources.getResourceTypeName(R.drawable.photo1) + '/'.toString() + resources.getResourceEntryName(R.drawable.photo1))
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .build()
@@ -34,12 +45,17 @@ class CameraActivity : AppCompatActivity() {
         checkSignIn() // Attempts to login with async callbacks. be careful.
     }
     private fun initializeDrawerBar(){
+        var testValue = signInAccount!!.photoUrl ?: "whatever"
+        Log.e("Testurl", testValue.toString())
         drawer {
             accountHeader{
                 background = R.drawable.background //TODO: Could find better background.
-                profile(signInAccount!!.displayName.toString(),signInAccount!!.email.toString()){
+                //TODO: Change placeholders with google sign in thingy.
 
-                    icon = R.drawable.photo1 //TODO: Change placeholders with google sign in thingy.
+                profile(signInAccount!!.displayName.toString(),signInAccount!!.email.toString()){
+                    //According to google, photoUrl will be null if user does not have Google+ enabled and have profile there. So i will add placeholder for now.
+                    iconUri = signInAccount!!.photoUrl ?: placeHolderUri!! // I hope placeholder won't be null ....
+
                 }
             }
             secondaryItem(getString(R.string.drawer_events)) {
@@ -94,8 +110,19 @@ class CameraActivity : AppCompatActivity() {
                 }
             }
         }
+
+    }
+    private fun isOnline(): Boolean {
+        val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+
+        val activeNetwork = cm.activeNetworkInfo
+        return activeNetwork != null && activeNetwork.isConnectedOrConnecting
     }
     private fun checkSignIn(){
+        if(!isOnline()){
+            //Means we are not connected to internet. Prompt user.
+            //TODO: Add dialog here.
+        }
         val task = mGoogleSignInClient!!.silentSignIn()
         if (task.isSuccessful) {
             // There's immediate result available.
@@ -105,8 +132,8 @@ class CameraActivity : AppCompatActivity() {
             // There's no immediate result ready, displays some progress indicator and waits for the
             // async callback.
             //TODO: I don't know, maybe show some animation when waiting to log in ?
-            task.addOnCompleteListener(this){ signIntask ->
-                if(signIntask.isSuccessful){
+            task.addOnCompleteListener(this){ signIn ->
+                if(signIn.isSuccessful){
                     signInAccount = task.result
                     initializeDrawerBar()
                 }
@@ -119,7 +146,13 @@ class CameraActivity : AppCompatActivity() {
     }
     private fun signInToGoogle(){
         val signInIntent = mGoogleSignInClient!!.signInIntent
-        startActivityForResult(signInIntent, RC_SIGN_IN)
+        if(isOnline()){
+            startActivityForResult(signInIntent, RC_SIGN_IN)
+        }
+        else{
+            //Prompt user for not being online.
+        }
+
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -129,5 +162,8 @@ class CameraActivity : AppCompatActivity() {
             signInAccount = task.result //This is newly signed in user.
             initializeDrawerBar()
         }
+    }
+    companion object {
+        private const val RC_SIGN_IN = 9001
     }
 }
