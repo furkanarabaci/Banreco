@@ -54,7 +54,7 @@ class CameraActivity : AppCompatActivity() {
     private fun initializeDrawerBar(){
         drawer {
             accountHeader{
-                background = R.drawable.background //TODO: Could find better background.
+                background = R.drawable.images //TODO: Could find better background.
                 profile(profileName!!,profileMail!!){
                     //According to google, photoUrl will be null if user does not have Google+ enabled and have profile there. So i will add placeholder for now.
                     iconBitmap = profilePic!! //Fallback is described at oncreate
