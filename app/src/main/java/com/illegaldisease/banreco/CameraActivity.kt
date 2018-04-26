@@ -14,28 +14,28 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import android.net.ConnectivityManager
-import android.net.Uri
-import android.util.Log
-import com.illegaldisease.banreco.R.mipmap.ic_launcher
-import android.content.ContentResolver
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.drawable.Drawable
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.SimpleTarget
+import com.bumptech.glide.request.transition.Transition
+import pub.devrel.easypermissions.EasyPermissions
+class CameraActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
-
-
-class CameraActivity : AppCompatActivity() {
 
     private var mGoogleSignInClient : GoogleSignInClient? = null
     private var signInAccount : GoogleSignInAccount? = null
-    private var placeHolderUri : Uri? = null
+    private var profilePic : Bitmap? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         setContentView(R.layout.activity_camera)
-        placeHolderUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE +
-                "://" + resources.getResourcePackageName(R.drawable.photo1)
-                + '/'.toString() + resources.getResourceTypeName(R.drawable.photo1) + '/'.toString() + resources.getResourceEntryName(R.drawable.photo1))
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
+                .requestId()
+                .requestProfile()
                 .build()
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
         //initializeDrawerBar() Commented out until i find a way to update drawer runtime
@@ -45,17 +45,13 @@ class CameraActivity : AppCompatActivity() {
         checkSignIn() // Attempts to login with async callbacks. be careful.
     }
     private fun initializeDrawerBar(){
-        var testValue = signInAccount!!.photoUrl ?: "whatever"
-        Log.e("Testurl", testValue.toString())
         drawer {
             accountHeader{
                 background = R.drawable.background //TODO: Could find better background.
-                //TODO: Change placeholders with google sign in thingy.
-
                 profile(signInAccount!!.displayName.toString(),signInAccount!!.email.toString()){
                     //According to google, photoUrl will be null if user does not have Google+ enabled and have profile there. So i will add placeholder for now.
-                    iconUri = signInAccount!!.photoUrl ?: placeHolderUri!! // I hope placeholder won't be null ....
-
+                    iconBitmap = profilePic ?: BitmapFactory.decodeResource(this@CameraActivity.resources, R.drawable.photo1) //Fallback
+                    //TODO: Consider adding sign-out options ??
                 }
             }
             secondaryItem(getString(R.string.drawer_events)) {
@@ -120,14 +116,14 @@ class CameraActivity : AppCompatActivity() {
     }
     private fun checkSignIn(){
         if(!isOnline()){
-            //Means we are not connected to internet. Prompt user.
+            //Means we are not connected to internet. Prompt user and leave necessary
             //TODO: Add dialog here.
         }
         val task = mGoogleSignInClient!!.silentSignIn()
         if (task.isSuccessful) {
             // There's immediate result available.
             signInAccount = task.result
-            initializeDrawerBar()
+            postSignIn()
         } else {
             // There's no immediate result ready, displays some progress indicator and waits for the
             // async callback.
@@ -135,24 +131,37 @@ class CameraActivity : AppCompatActivity() {
             task.addOnCompleteListener(this){ signIn ->
                 if(signIn.isSuccessful){
                     signInAccount = task.result
-                    initializeDrawerBar()
+                    postSignIn()
                 }
                 else{
-                    //It is failed. Send some errors or i don't know. Maybe prompt sign in ?
+                    //It is failed. Send some errors or i don't know. Maybe try signing in again  ?
                     signInToGoogle() //Result is async.
                 }
             }
         }
     }
+    //@AfterPermissionGranted(Context.CONNECTIVITY_SERVICE)
+    private fun postSignIn() {
+        val currentUri = signInAccount!!.photoUrl
+        val target = object : SimpleTarget<Bitmap>() {
+            override fun onResourceReady(resource: Bitmap?, transition: Transition<in Bitmap>?) {
+                profilePic = resource
+                initializeDrawerBar()
+            }
+            override fun onLoadFailed(errorDrawable: Drawable?) {
+                //It is not guaranteed that we can get our url. Fallback is provided in drawerbar.
+                super.onLoadFailed(errorDrawable)
+                initializeDrawerBar()
+            }
+        }
+        Glide.with(this)
+                .asBitmap()
+                .load(currentUri)
+                .into(target)
+    }
     private fun signInToGoogle(){
         val signInIntent = mGoogleSignInClient!!.signInIntent
-        if(isOnline()){
-            startActivityForResult(signInIntent, RC_SIGN_IN)
-        }
-        else{
-            //Prompt user for not being online.
-        }
-
+        startActivityForResult(signInIntent, RC_SIGN_IN) //We check internet connection before
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -160,8 +169,15 @@ class CameraActivity : AppCompatActivity() {
         if(requestCode == RC_SIGN_IN){
             val task = GoogleSignIn.getSignedInAccountFromIntent(data)
             signInAccount = task.result //This is newly signed in user.
-            initializeDrawerBar()
+            postSignIn()
         }
+    }
+    override fun onPermissionsDenied(requestCode: Int, perms: MutableList<String>) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun onPermissionsGranted(requestCode: Int, perms: MutableList<String>) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
     companion object {
         private const val RC_SIGN_IN = 9001

@@ -2,7 +2,6 @@
     <string name="app_name">Banreco</string>
     <string name="open">Open</string>
     <string name="close">Close</string>
-    <string name="take_picture">Take picture</string>
     <string name="drawer_logout">Çıkış</string>
     <string name="drawer_events">Gelecek Etkinlikler</string>
     <string name="drawer_calendar">Takvim</string>
