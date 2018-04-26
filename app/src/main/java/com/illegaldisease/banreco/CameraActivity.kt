@@ -1,5 +1,6 @@
 package com.illegaldisease.banreco
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
@@ -20,25 +21,31 @@ import android.graphics.drawable.Drawable
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
-import pub.devrel.easypermissions.EasyPermissions
-class CameraActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
+class CameraActivity : AppCompatActivity() {
 
     private var mGoogleSignInClient : GoogleSignInClient? = null
     private var signInAccount : GoogleSignInAccount? = null
     private var profilePic : Bitmap? = null
+    private var profileMail : String? = null
+    private  var profileName : String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         setContentView(R.layout.activity_camera)
+
+        profilePic = BitmapFactory.decodeResource(this@CameraActivity.resources, R.drawable.photo1)
+        profileMail = "notsignedin@placeholder.com" //Placeholder values
+        profileName = "Anonymouse" //I know it is anonymous, it is intended.
+
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .requestId()
                 .requestProfile()
                 .build()
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
-        //initializeDrawerBar() Commented out until i find a way to update drawer runtime
+        //initializeDra werBar() Commented out until i find a way to update drawer runtime
     }
     override fun onStart() {
         super.onStart()
@@ -48,9 +55,9 @@ class CameraActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks 
         drawer {
             accountHeader{
                 background = R.drawable.background //TODO: Could find better background.
-                profile(signInAccount!!.displayName.toString(),signInAccount!!.email.toString()){
+                profile(profileName!!,profileMail!!){
                     //According to google, photoUrl will be null if user does not have Google+ enabled and have profile there. So i will add placeholder for now.
-                    iconBitmap = profilePic ?: BitmapFactory.decodeResource(this@CameraActivity.resources, R.drawable.photo1) //Fallback
+                    iconBitmap = profilePic!! //Fallback is described at oncreate
                     //TODO: Consider adding sign-out options ??
                 }
             }
@@ -140,9 +147,10 @@ class CameraActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks 
             }
         }
     }
-    //@AfterPermissionGranted(Context.CONNECTIVITY_SERVICE)
     private fun postSignIn() {
         val currentUri = signInAccount!!.photoUrl
+        profileName = signInAccount!!.displayName
+        profileMail = signInAccount!!.email
         val target = object : SimpleTarget<Bitmap>() {
             override fun onResourceReady(resource: Bitmap?, transition: Transition<in Bitmap>?) {
                 profilePic = resource
@@ -161,23 +169,22 @@ class CameraActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks 
     }
     private fun signInToGoogle(){
         val signInIntent = mGoogleSignInClient!!.signInIntent
-        startActivityForResult(signInIntent, RC_SIGN_IN) //We check internet connection before
+        startActivityForResult(signInIntent, RC_SIGN_IN) //We checked internet connection before
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if(requestCode == RC_SIGN_IN){
-            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
-            signInAccount = task.result //This is newly signed in user.
-            postSignIn()
+            if(resultCode == Activity.RESULT_OK){
+                val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+                signInAccount = task.result //This is newly signed in user.
+                postSignIn()
+            }
+            else{
+                //TODO: Sign in is cancelled, do something else ?
+                initializeDrawerBar() // Initialize it with placeholders. Program will probably cease to work at other steps.
+            }
         }
-    }
-    override fun onPermissionsDenied(requestCode: Int, perms: MutableList<String>) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun onPermissionsGranted(requestCode: Int, perms: MutableList<String>) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
     companion object {
         private const val RC_SIGN_IN = 9001
