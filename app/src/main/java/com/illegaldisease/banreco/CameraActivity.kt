@@ -13,9 +13,6 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import co.zsmb.materialdrawerkt.imageloader.drawerImageLoader
-import com.mikepenz.materialdrawer.util.DrawerUIUtils
-import com.squareup.picasso.Picasso
 
 class CameraActivity : AppCompatActivity() {
     private val RC_SIGN_IN = 9001
@@ -31,21 +28,6 @@ class CameraActivity : AppCompatActivity() {
                 .build()
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
         //initializeDrawerBar() Commented out until i find a way to update drawer runtime
-        drawerImageLoader {
-            placeholder { ctx, tag ->
-                DrawerUIUtils.getPlaceHolder(ctx)
-            }
-            set { imageView, uri, placeholder, tag ->
-                Picasso.with(imageView.context)
-                        .load(uri)
-                        .placeholder(placeholder)
-                        .into(imageView)
-            }
-            cancel { imageView ->
-                Picasso.with(imageView.context)
-                        .cancelRequest(imageView)
-            }
-        }
     }
     override fun onStart() {
         super.onStart()
