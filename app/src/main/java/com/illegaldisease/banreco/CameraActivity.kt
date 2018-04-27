@@ -1,23 +1,28 @@
 package com.illegaldisease.banreco
 
 import android.app.Activity
+import android.content.ContentUris
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.WindowManager
+import android.net.ConnectivityManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.drawable.Drawable
+import android.provider.CalendarContract
+
 import co.zsmb.materialdrawerkt.builders.accountHeader
 import co.zsmb.materialdrawerkt.builders.drawer
 import co.zsmb.materialdrawerkt.draweritems.badgeable.secondaryItem
 import co.zsmb.materialdrawerkt.draweritems.divider
 import co.zsmb.materialdrawerkt.draweritems.profile.profile
+
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import android.net.ConnectivityManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.drawable.Drawable
+
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
@@ -54,7 +59,7 @@ class CameraActivity : AppCompatActivity() {
     private fun initializeDrawerBar(){
         drawer {
             accountHeader{
-                background = R.drawable.background //TODO: Could find better background.
+                background = R.drawable.images
                 profile(profileName!!,profileMail!!){
                     //According to google, photoUrl will be null if user does not have Google+ enabled and have profile there. So i will add placeholder for now.
                     iconBitmap = profilePic!! //Fallback is described at oncreate
@@ -71,7 +76,13 @@ class CameraActivity : AppCompatActivity() {
             secondaryItem(getString(R.string.drawer_calendar)) {
                 icon = R.drawable.ic_date_range_black_24dp
                 onClick {_ ->
-                    //TODO: Connect to calender here.
+                    val startMillis = System.currentTimeMillis() // A date-time specified in milliseconds since the epoch.
+                    val builder = CalendarContract.CONTENT_URI.buildUpon()
+                    builder.appendPath("time")
+                    ContentUris.appendId(builder, startMillis)
+                    val intent = Intent(Intent.ACTION_VIEW)
+                            .setData(builder.build())
+                    startActivity(intent)
                     false
                 }
             }
