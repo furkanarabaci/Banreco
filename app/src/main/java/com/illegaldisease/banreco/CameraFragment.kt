@@ -19,6 +19,7 @@ import android.util.Size
 import android.util.SparseIntArray
 import android.view.*
 import android.widget.Toast
+import org.jetbrains.anko.act
 import java.io.*
 import java.util.*
 
@@ -150,6 +151,7 @@ class CameraFragment : Fragment() {
         }
     }
     private fun saveFileToStorage(reader: ImageReader){
+        (activity as CameraActivity).pickDate()
         val file = File(activity.filesDir.toString() + "/" + System.currentTimeMillis().toString()) //Now we guaranteed it to be unique.
         val readerListener = object : ImageReader.OnImageAvailableListener {
             override fun onImageAvailable(reader: ImageReader) {

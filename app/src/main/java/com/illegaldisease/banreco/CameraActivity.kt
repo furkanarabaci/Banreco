@@ -26,8 +26,15 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
+import com.wdullaer.materialdatetimepicker.date.DatePickerDialog
+import com.wdullaer.materialdatetimepicker.time.TimePickerDialog
 
-class CameraActivity : AppCompatActivity() {
+import java.util.*
+
+class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,DatePickerDialog.OnDateSetListener {
+    companion object {
+        private const val RC_SIGN_IN = 9001
+    }
 
     private var mGoogleSignInClient : GoogleSignInClient? = null
     private var signInAccount : GoogleSignInAccount? = null
@@ -76,13 +83,7 @@ class CameraActivity : AppCompatActivity() {
             secondaryItem(getString(R.string.drawer_calendar)) {
                 icon = R.drawable.ic_date_range_black_24dp
                 onClick {_ ->
-                    val startMillis = System.currentTimeMillis() // A date-time specified in milliseconds since the epoch.
-                    val builder = CalendarContract.CONTENT_URI.buildUpon()
-                    builder.appendPath("time")
-                    ContentUris.appendId(builder, startMillis)
-                    val intent = Intent(Intent.ACTION_VIEW)
-                            .setData(builder.build())
-                    startActivity(intent)
+                    openCalendar(System.currentTimeMillis())
                     false
                 }
             }
@@ -125,6 +126,13 @@ class CameraActivity : AppCompatActivity() {
             }
         }
 
+    }
+    private fun openCalendar(openTime : Long){
+        val builder = CalendarContract.CONTENT_URI.buildUpon()
+        builder.appendPath("time")
+        ContentUris.appendId(builder, openTime)
+        val intent = Intent(Intent.ACTION_VIEW).setData(builder.build())
+        startActivity(intent)
     }
     private fun isOnline(): Boolean {
         val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -197,7 +205,31 @@ class CameraActivity : AppCompatActivity() {
             }
         }
     }
-    companion object {
-        private const val RC_SIGN_IN = 9001
+    public fun pickTime(){
+        val tpd = TimePickerDialog.newInstance(
+                this@CameraActivity,
+                true //TODO: You might consider time modes
+        )
+        tpd.show(fragmentManager,"TimePicker")
+        tpd.version = TimePickerDialog.Version.VERSION_2
     }
+    public fun pickDate(){
+        val now = Calendar.getInstance()
+        val dpd = DatePickerDialog.newInstance(
+                this@CameraActivity,
+                now.get(Calendar.YEAR),
+                now.get(Calendar.MONTH),
+                now.get(Calendar.DAY_OF_MONTH)
+        )
+        dpd.show(fragmentManager, "DatePicker")
+        dpd.version = DatePickerDialog.Version.VERSION_2
+    }
+    override fun onTimeSet(view: TimePickerDialog?, hourOfDay: Int, minute: Int, second: Int) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun onDateSet(view: DatePickerDialog?, year: Int, monthOfYear: Int, dayOfMonth: Int) {
+        pickTime()
+    }
+
 }
