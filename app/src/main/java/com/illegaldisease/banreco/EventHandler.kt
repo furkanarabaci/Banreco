@@ -12,7 +12,7 @@ class EventHandler(ctx: Context) : ManagedSQLiteOpenHelper(ctx, "BanrecoDB", nul
         @Synchronized
         fun getInstance(ctx: Context): EventHandler {
             if (instance == null) {
-                instance = EventHandler(ctx.getApplicationContext())
+                instance = EventHandler(ctx.applicationContext)
             }
             return instance!!
         }

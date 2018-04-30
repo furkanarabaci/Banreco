@@ -19,7 +19,6 @@ import android.util.Size
 import android.util.SparseIntArray
 import android.view.*
 import android.widget.Toast
-import org.jetbrains.anko.act
 import java.io.*
 import java.util.*
 

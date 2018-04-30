@@ -40,7 +40,8 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     private var signInAccount : GoogleSignInAccount? = null
     private var profilePic : Bitmap? = null
     private var profileMail : String? = null
-    private  var profileName : String? = null
+    private var profileName : String? = null
+    private var lastEventDate : Calendar? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,6 +51,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         profilePic = BitmapFactory.decodeResource(this@CameraActivity.resources, R.drawable.photo1)
         profileMail = "notsignedin@placeholder.com" //Placeholder values
         profileName = "Anonymouse" //I know it is anonymous, it is intended.
+        lastEventDate = GregorianCalendar.getInstance(TimeZone.getDefault()) //Don't forget to re-initialize
 
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
@@ -224,12 +226,16 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         dpd.show(fragmentManager, "DatePicker")
         dpd.version = DatePickerDialog.Version.VERSION_2
     }
-    override fun onTimeSet(view: TimePickerDialog?, hourOfDay: Int, minute: Int, second: Int) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
     override fun onDateSet(view: DatePickerDialog?, year: Int, monthOfYear: Int, dayOfMonth: Int) {
+        lastEventDate!!.set(Calendar.MONTH, monthOfYear)
+        lastEventDate!!.set(Calendar.YEAR, year)
+        lastEventDate!!.set(Calendar.DAY_OF_MONTH, dayOfMonth)
         pickTime()
+    }
+    override fun onTimeSet(view: TimePickerDialog?, hourOfDay: Int, minute: Int, second: Int) {
+        lastEventDate!!.set(Calendar.HOUR_OF_DAY, hourOfDay)
+        lastEventDate!!.set(Calendar.MINUTE, minute)
+        lastEventDate!!.set(Calendar.SECOND, second)
     }
 
 }
