@@ -5,18 +5,10 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context=".activities.CameraActivity">
-
-    <com.illegaldisease.banreco.camera.CameraSourcePreview
-        android:id="@+id/preview"
+    <TextureView
+        android:id="@+id/texture"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" >
-
-        <com.illegaldisease.banreco.camera.GraphicOverlay
-            android:id="@+id/graphicOverlay"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-    </com.illegaldisease.banreco.camera.CameraSourcePreview>
+        android:layout_height="match_parent"/>
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab_take_photo"

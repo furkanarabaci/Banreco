@@ -1,15 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.v4.widget.DrawerLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true">
-    <fragment
-        android:name="com.illegaldisease.banreco.CameraFragment"
-        android:id="@+id/camera_fragment"
+    <com.illegaldisease.banreco.camera.CameraSourcePreview
+        android:id="@+id/preview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent" >
 
-</android.support.v4.widget.DrawerLayout>
+        <com.illegaldisease.banreco.camera.GraphicOverlay
+            android:id="@+id/graphicOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </com.illegaldisease.banreco.camera.CameraSourcePreview>
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/fab_take_photo"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="24dp"
+        android:src="@drawable/ic_camera"
+        android:backgroundTint="@color/colorPrimary" />
+
+</RelativeLayout>
 
