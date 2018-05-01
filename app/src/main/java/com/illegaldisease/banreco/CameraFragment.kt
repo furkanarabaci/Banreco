@@ -20,7 +20,6 @@ import android.content.IntentFilter
 import com.google.android.gms.vision.text.TextRecognizer
 import android.annotation.SuppressLint
 import android.app.AlertDialog
-import android.hardware.Camera
 import android.content.DialogInterface
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
@@ -42,7 +41,6 @@ class CameraFragment : android.support.v4.app.Fragment() {
         super.onCreate(savedInstanceState)
         return inflater!!.inflate(R.layout.fragment_camera ,container,false)
     }
-
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         mPreview = activity!!.findViewById(R.id.preview) as CameraSourcePreview
@@ -60,18 +58,12 @@ class CameraFragment : android.support.v4.app.Fragment() {
         } else {
             requestCameraPermission()
         }
-
         gestureDetector = GestureDetector(activity, CaptureGestureListener())
         scaleGestureDetector = ScaleGestureDetector(activity, ScaleListener())
 
         Snackbar.make(mGraphicOverlay!!, "Tap to capture. Pinch/Stretch to zoom",
                 Snackbar.LENGTH_LONG)
                 .show()
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
     }
 
     private fun requestCameraPermission() {
@@ -148,11 +140,9 @@ class CameraFragment : android.support.v4.app.Fragment() {
         // Creates and starts the camera.  Note that this uses a higher resolution in comparison
         // to other detection examples to enable the text recognizer to detect small pieces of text.
         mCameraSource = CameraSource.Builder(context, textRecognizer)
-                .setFacing(CameraSource.CAMERA_FACING_BACK)
+                .setFacing(CameraSource.CAMERA_FACING_FRONT) //TODO: Change this
                 .setRequestedPreviewSize(1280, 1024)
                 .setRequestedFps(2.0f)
-                .setFlashMode(if (useFlash) Camera.Parameters.FLASH_MODE_TORCH else null)
-                .setFocusMode(if (autoFocus) Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE else null)
                 .build()
     }
 
@@ -243,7 +233,7 @@ class CameraFragment : android.support.v4.app.Fragment() {
 
         if (mCameraSource != null) {
             try {
-                mPreview!!.start(mCameraSource, mGraphicOverlay);
+                mPreview!!.start(mCameraSource, mGraphicOverlay)
             } catch (e : IOException) {
                 Log.e(TAG, "Unable to start camera source.", e)
                 mCameraSource!!.release()
