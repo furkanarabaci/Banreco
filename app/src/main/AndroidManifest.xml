@@ -19,23 +19,24 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-        <activity android:name=".CameraActivity">
+        <meta-data android:name="com.google.android.gms.vision.DEPENDENCIES" android:value="ocr"/>
+        <activity android:name=".activities.CameraActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
-            android:name=".LogsActivity"
+            android:name=".activities.LogsActivity"
             android:label="@string/title_activity_logs"
             android:theme="@style/AppTheme" />
         <activity
-            android:name=".EventsActivity"
+            android:name=".activities.EventsActivity"
             android:label="@string/title_activity_events"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
         <activity
-            android:name=".SettingsActivity"
+            android:name=".activities.SettingsActivity"
             android:label="@string/title_activity_settings"/>
     </application>
-    <meta-data android:name="com.google.android.gms.vision.DEPENDENCIES" android:value="ocr"/>
+
 </manifest>

@@ -1,4 +1,4 @@
-package com.illegaldisease.banreco
+package com.illegaldisease.banreco.activities
 
 import android.app.Activity
 import android.content.ContentUris
@@ -26,6 +26,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
+import com.illegaldisease.banreco.R
 import com.wdullaer.materialdatetimepicker.date.DatePickerDialog
 import com.wdullaer.materialdatetimepicker.time.TimePickerDialog
 
@@ -78,7 +79,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
             secondaryItem(getString(R.string.drawer_events)) {
                 icon = R.drawable.ic_event_available_black_24dp
                 onClick {_ ->
-                    startActivity(Intent(this@CameraActivity,EventsActivity :: class.java))
+                    startActivity(Intent(this@CameraActivity, EventsActivity:: class.java))
                     false
                 }
             }
@@ -92,14 +93,14 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
             secondaryItem(getString(R.string.drawer_settings)) {
                 icon = R.drawable.ic_settings_black_24dp
                 onClick {_ ->
-                    startActivity(Intent(this@CameraActivity,SettingsActivity :: class.java))
+                    startActivity(Intent(this@CameraActivity, SettingsActivity:: class.java))
                     false
                 }
             }
             secondaryItem(getString(R.string.drawer_logs)) {
                 icon = R.drawable.ic_archive_black_24dp
                 onClick {_ ->
-                    startActivity(Intent(this@CameraActivity,LogsActivity :: class.java))
+                    startActivity(Intent(this@CameraActivity, LogsActivity:: class.java))
                     false
                 }
             }
@@ -207,7 +208,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
             }
         }
     }
-    public fun pickTime(){
+    private fun pickTime(){
         val tpd = TimePickerDialog.newInstance(
                 this@CameraActivity,
                 true //TODO: You might consider time modes

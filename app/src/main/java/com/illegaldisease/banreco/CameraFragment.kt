@@ -1,312 +1,357 @@
 package com.illegaldisease.banreco
 
 import android.Manifest
-import android.app.Fragment
-import android.content.Context
-import android.content.pm.PackageManager
-import android.graphics.ImageFormat
-import android.graphics.SurfaceTexture
-import android.hardware.camera2.*
-import android.media.Image
-import android.media.ImageReader
 import android.os.Bundle
-import android.os.Handler
-import android.os.HandlerThread
-import android.support.design.widget.FloatingActionButton
+import android.view.*
+import android.view.GestureDetector
+import android.view.ScaleGestureDetector
+
+import com.illegaldisease.banreco.camera.CameraSource
+import com.illegaldisease.banreco.camera.CameraSourcePreview
+import com.illegaldisease.banreco.camera.GraphicOverlay
+import android.support.design.widget.Snackbar
+import android.content.pm.PackageManager
 import android.support.v4.app.ActivityCompat
 import android.util.Log
-import android.util.Size
-import android.util.SparseIntArray
-import android.view.*
+import android.view.MotionEvent
 import android.widget.Toast
-import java.io.*
-import java.util.*
+import android.content.Intent
+import android.content.IntentFilter
+import com.google.android.gms.vision.text.TextRecognizer
+import android.annotation.SuppressLint
+import android.app.AlertDialog
+import android.hardware.Camera
+import android.content.DialogInterface
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.gms.common.api.CommonStatusCodes
+import com.google.android.gms.vision.text.TextBlock
+import java.io.IOException
 
-class CameraFragment : Fragment() {
-    private var takePictureButton: FloatingActionButton? = null
-    private var textureView: TextureView? = null
-    private var cameraId: String? = null
-    private var cameraDevice: CameraDevice? = null
-    private lateinit var cameraCaptureSessions: CameraCaptureSession
-    //    private var captureRequest: CaptureRequest? = null
-    private lateinit var captureRequestBuilder: CaptureRequest.Builder
-    private var imageDimension: Size? = null
-    private var imageReader: ImageReader? = null
-    //    private val mFlashSupported: Boolean = false
-    private var mBackgroundHandler: Handler? = null
-    private var mBackgroundThread: HandlerThread? = null
-    private var textureListener: TextureView.SurfaceTextureListener = object : TextureView.SurfaceTextureListener {
-        override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
-            //open your camera here
-            openCamera()
-        }
 
-        override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
-            // Transform you image captured size according to the surface width and height
-        }
+class CameraFragment : android.support.v4.app.Fragment() {
+    private var mCameraSource: CameraSource? = null
+    private var mPreview: CameraSourcePreview? = null
+    private var mGraphicOverlay: GraphicOverlay<OcrGraphic>? = null
 
-        override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
-            return false
-        }
+    // Helper objects for detecting taps and pinches.
+    private var scaleGestureDetector: ScaleGestureDetector? = null
+    private var gestureDetector: GestureDetector? = null
 
-        override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {}
-    }
-    private val stateCallback = object : CameraDevice.StateCallback() {
-        override fun onOpened(camera: CameraDevice) {
-            //This is called when the camera is open
-            cameraDevice = camera
-            createCameraPreview()
-        }
-
-        override fun onDisconnected(camera: CameraDevice) {
-            cameraDevice!!.close()
-        }
-
-        override fun onError(camera: CameraDevice, error: Int) {
-            cameraDevice!!.close()
-            cameraDevice = null
-        }
-    }
-
-    override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         super.onCreate(savedInstanceState)
         return inflater!!.inflate(R.layout.fragment_camera ,container,false)
     }
 
-    override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        textureView = view!!.findViewById<View>(R.id.texture) as TextureView
-        textureView!!.surfaceTextureListener = textureListener
-        takePictureButton = view.findViewById<View>(R.id.fab_take_photo) as FloatingActionButton
-        takePictureButton!!.setOnClickListener { takePicture() }
-    }
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        mPreview = activity!!.findViewById(R.id.preview) as CameraSourcePreview
+        mGraphicOverlay = activity!!.findViewById(R.id.graphicOverlay) as GraphicOverlay<OcrGraphic>
 
-    private fun startBackgroundThread() {
-        mBackgroundThread = HandlerThread("Camera Background")
-        mBackgroundThread!!.start()
-        mBackgroundHandler = Handler(mBackgroundThread!!.looper)
-    }
+        // read parameters from the intent used to launch the activity.
+        val autoFocus = activity!!.intent.getBooleanExtra(AutoFocus, false)
+        val useFlash = activity!!.intent.getBooleanExtra(UseFlash, false)
 
-    private fun stopBackgroundThread() {
-        mBackgroundThread!!.quitSafely()
-        try {
-            mBackgroundThread!!.join()
-            mBackgroundThread = null
-            mBackgroundHandler = null
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
+        // Check for the camera permission before accessing the camera.  If the
+        // permission is not granted yet, request permission.
+        val rc = ActivityCompat.checkSelfPermission(activity!!, Manifest.permission.CAMERA)
+        if (rc == PackageManager.PERMISSION_GRANTED) {
+            createCameraSource(autoFocus, useFlash)
+        } else {
+            requestCameraPermission()
         }
 
+        gestureDetector = GestureDetector(activity, CaptureGestureListener())
+        scaleGestureDetector = ScaleGestureDetector(activity, ScaleListener())
+
+        Snackbar.make(mGraphicOverlay!!, "Tap to capture. Pinch/Stretch to zoom",
+                Snackbar.LENGTH_LONG)
+                .show()
     }
 
-    private fun takePicture() {
-        if (null == cameraDevice) {
-            Log.e(CameraFragment.TAG, "cameraDevice is null")
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+    }
+
+    private fun requestCameraPermission() {
+        Log.w(TAG, "Camera permission is not granted. Requesting permission")
+
+        val permissions = arrayOf(Manifest.permission.CAMERA)
+
+        if (!ActivityCompat.shouldShowRequestPermissionRationale(activity!!,
+                        Manifest.permission.CAMERA)) {
+            ActivityCompat.requestPermissions(activity!!, permissions, RC_HANDLE_CAMERA_PERM)
             return
         }
-        val manager = activity.getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        try {
-            val characteristics = manager.getCameraCharacteristics(cameraDevice!!.id)
-            val jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)!!.getOutputSizes(ImageFormat.JPEG)
-            var width = 640
-            var height = 480 //Default sizes.
-            if (jpegSizes != null && jpegSizes.isNotEmpty()) {
-                width = jpegSizes[0].width
-                height = jpegSizes[0].height
-            }
-            val reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1)
-            val outputSurfaces = ArrayList<Surface>(2)
-            outputSurfaces.add(reader.surface)
-            outputSurfaces.add(Surface(textureView!!.surfaceTexture))
-            val captureBuilder = cameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
-            captureBuilder.addTarget(reader.surface)
-            captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO)
-            // Orientation
-            val rotation = activity.windowManager.defaultDisplay.rotation
-            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, CameraFragment.ORIENTATIONS.get(rotation))
-            saveFileToStorage(reader)
-            val captureListener = object : CameraCaptureSession.CaptureCallback() {
-                override fun onCaptureCompleted(session: CameraCaptureSession, request: CaptureRequest, result: TotalCaptureResult) {
-                    super.onCaptureCompleted(session, request, result)
 
-                    createCameraPreview()
-                }
-            }
-            cameraDevice!!.createCaptureSession(outputSurfaces, object : CameraCaptureSession.StateCallback() {
-                override fun onConfigured(session: CameraCaptureSession) {
-                    try {
-                        session.capture(captureBuilder.build(), captureListener, mBackgroundHandler)
-                    } catch (e: CameraAccessException) {
-                        e.printStackTrace()
-                    }
-
-                }
-
-                override fun onConfigureFailed(session: CameraCaptureSession) {}
-            }, mBackgroundHandler)
-        } catch (e: CameraAccessException) {
-            e.printStackTrace()
-        }
-    }
-    private fun saveFileToStorage(reader: ImageReader){
-        (activity as CameraActivity).pickDate()
-        val file = File(activity.filesDir.toString() + "/" + System.currentTimeMillis().toString()) //Now we guaranteed it to be unique.
-        val readerListener = object : ImageReader.OnImageAvailableListener {
-            override fun onImageAvailable(reader: ImageReader) {
-                var image: Image? = null
-                try {
-                    image = reader.acquireLatestImage()
-                    val buffer = image!!.planes[0].buffer
-                    val bytes = ByteArray(buffer.capacity())
-                    buffer.get(bytes)
-                    save(bytes)
-                    Toast.makeText(activity, "Saved to :$file", Toast.LENGTH_LONG).show()
-                } catch (e: FileNotFoundException) {
-                    e.printStackTrace()
-                    Toast.makeText(activity, "Some error has occurred.", Toast.LENGTH_LONG).show()
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                    Toast.makeText(activity, "Could not save to :$file", Toast.LENGTH_LONG).show()
-                } finally {
-                    if (image != null) {
-                    }
-                }
-            }
-
-            @Throws(IOException::class)
-            private fun save(bytes: ByteArray) {
-                var output: OutputStream? = null
-                try {
-                    output = FileOutputStream(file)
-                    output.write(bytes)
-                } finally {
-                    if (null != output) {
-                        output.close()
-                    }
-                }
-            }
-        }
-        reader.setOnImageAvailableListener(readerListener, mBackgroundHandler)
-    }
-    private fun createCameraPreview() {
-        try {
-            val texture = textureView!!.surfaceTexture!!
-            texture.setDefaultBufferSize(imageDimension!!.width, imageDimension!!.height)
-            val surface = Surface(texture)
-            captureRequestBuilder = cameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-            captureRequestBuilder.addTarget(surface)
-            cameraDevice!!.createCaptureSession(Arrays.asList(surface), object : CameraCaptureSession.StateCallback() {
-                override fun onConfigured(cameraCaptureSession: CameraCaptureSession) {
-                    //The camera is already closed
-                    if (null == cameraDevice) {
-                        return
-                    }
-                    // When the session is ready, we start displaying the preview.
-                    cameraCaptureSessions = cameraCaptureSession
-                    updatePreview()
-                }
-
-                override fun onConfigureFailed(cameraCaptureSession: CameraCaptureSession) {
-                    Toast.makeText(activity, "Configuration change", Toast.LENGTH_SHORT).show()
-                }
-            }, null)
-        } catch (e: CameraAccessException) {
-            e.printStackTrace()
+        val listener = View.OnClickListener {
+            ActivityCompat.requestPermissions(activity!!, permissions,
+                    RC_HANDLE_CAMERA_PERM)
         }
 
+        Snackbar.make(mGraphicOverlay!!, R.string.permission_camera_rationale,
+                Snackbar.LENGTH_INDEFINITE)
+                .setAction(R.string.ok, listener)
+                .show()
     }
 
-    private fun openCamera() {
-        val manager = activity.getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        try {
-            cameraId = manager.cameraIdList[0]
-            val characteristics = manager.getCameraCharacteristics(cameraId!!)
-            val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)!!
-            imageDimension = map.getOutputSizes(SurfaceTexture::class.java)[0]
-            // Add permission for camera and let user grant the permission
-            if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(activity, arrayOf(Manifest.permission.CAMERA), CameraFragment.REQUEST_CAMERA_PERMISSION)
-                return
+    fun onTouchEvent(e: MotionEvent): Boolean {
+        val b = scaleGestureDetector!!.onTouchEvent(e)
+
+        val c = gestureDetector!!.onTouchEvent(e)
+
+        return b || c || activity!!.onTouchEvent(e)
+    }
+
+    /**
+     * Creates and starts the camera.  Note that this uses a higher resolution in comparison
+     * to other detection examples to enable the ocr detector to detect small text samples
+     * at long distances.
+     *
+     * Suppressing InlinedApi since there is a check that the minimum version is met before using
+     * the constant.
+     */
+    @SuppressLint("InlinedApi")
+    private fun createCameraSource(autoFocus: Boolean, useFlash: Boolean) {
+        val context = activity!!.applicationContext
+
+        // A text recognizer is created to find text.  An associated processor instance
+        // is set to receive the text recognition results and display graphics for each text block
+        // on screen.
+        val textRecognizer = TextRecognizer.Builder(context).build()
+        textRecognizer.setProcessor(OcrDetectorProcessor(mGraphicOverlay))
+
+        if (!textRecognizer.isOperational) {
+            // Note: The first time that an app using a Vision API is installed on a
+            // device, GMS will download a native libraries to the device in order to do detection.
+            // Usually this completes before the app is run for the first time.  But if that
+            // download has not yet completed, then the above call will not detect any text,
+            // barcodes, or faces.
+            //
+            // isOperational() can be used to check if the required native libraries are currently
+            // available.  The detectors will automatically become operational once the library
+            // downloads complete on device.
+            Log.w(TAG, "Detector dependencies are not yet available.")
+
+            // Check for low storage.  If there is low storage, the native library will not be
+            // downloaded, so detection will not become operational.
+            val lowstorageFilter = IntentFilter(Intent.ACTION_DEVICE_STORAGE_LOW)
+            val hasLowStorage = activity!!.registerReceiver(null, lowstorageFilter) != null
+
+            if (hasLowStorage) {
+                Toast.makeText(activity, R.string.low_storage_error, Toast.LENGTH_LONG).show()
+                Log.w(TAG, getString(R.string.low_storage_error))
             }
-            manager.openCamera(cameraId!!, stateCallback, null)
-        } catch (e: CameraAccessException) {
-            e.printStackTrace()
         }
 
+        // Creates and starts the camera.  Note that this uses a higher resolution in comparison
+        // to other detection examples to enable the text recognizer to detect small pieces of text.
+        mCameraSource = CameraSource.Builder(context, textRecognizer)
+                .setFacing(CameraSource.CAMERA_FACING_BACK)
+                .setRequestedPreviewSize(1280, 1024)
+                .setRequestedFps(2.0f)
+                .setFlashMode(if (useFlash) Camera.Parameters.FLASH_MODE_TORCH else null)
+                .setFocusMode(if (autoFocus) Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE else null)
+                .build()
     }
 
-    private fun updatePreview() {
-        if (null == cameraDevice) {
-            Log.e(CameraFragment.TAG, "updatePreview error, return")
-        }
-        captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO)
-        try {
-            cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, mBackgroundHandler)
-        } catch (e: CameraAccessException) {
-            e.printStackTrace()
-        }
-
-    }
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        if (requestCode == CameraFragment.REQUEST_CAMERA_PERMISSION) {
-            if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
-                // close the app
-                Toast.makeText(activity, "Sorry!!!, you can't use this app without granting permission", Toast.LENGTH_LONG).show()
-                activity.finish()
-            }
-        }
-    }
-
+    /**
+     * Restarts the camera.
+     */
     override fun onResume() {
         super.onResume()
-        startBackgroundThread()
-        if (textureView!!.isAvailable) {
-            openCamera()
-        } else {
-            textureView!!.surfaceTextureListener = textureListener
-        }
+        startCameraSource()
     }
 
+    /**
+     * Stops the camera.
+     */
     override fun onPause() {
-        closeCamera()
-        stopBackgroundThread()
         super.onPause()
-    }
-
-    override fun onStop() {
-        super.onStop()
-        closeCamera()
-        closeBackGroundThread()
-    }
-
-    private fun closeCamera() {
-        if (null != cameraDevice) {
-            cameraDevice!!.close()
-            cameraDevice = null
-        }
-        if (null != imageReader) {
-            imageReader!!.close()
-            imageReader = null
+        if (mPreview != null) {
+            mPreview!!.stop()
         }
     }
-    private fun closeBackGroundThread(){
-        if(mBackgroundThread != null){
-            mBackgroundThread!!.quitSafely() //I think we are double-checking null thingy, so very well.
-            mBackgroundThread = null
-            mBackgroundHandler = null
+
+    /**
+     * Releases the resources associated with the camera source, the associated detectors, and the
+     * rest of the processing pipeline.
+     */
+    override fun onDestroy() {
+        super.onDestroy()
+        if (mPreview != null) {
+            mPreview!!.release()
+        }
+    }
+
+    /**
+     * Callback for the result from requesting permissions. This method
+     * is invoked for every call on [.requestPermissions].
+     *
+     *
+     * **Note:** It is possible that the permissions request interaction
+     * with the user is interrupted. In this case you will receive empty permissions
+     * and results arrays which should be treated as a cancellation.
+     *
+     *
+     * @param requestCode  The request code passed in [.requestPermissions].
+     * @param permissions  The requested permissions. Never null.
+     * @param grantResults The grant results for the corresponding permissions
+     * which is either [PackageManager.PERMISSION_GRANTED]
+     * or [PackageManager.PERMISSION_DENIED]. Never null.
+     * @see .requestPermissions
+     */
+    override fun onRequestPermissionsResult(requestCode: Int,
+                                            permissions: Array<String>,
+                                            grantResults: IntArray) {
+        if (requestCode != RC_HANDLE_CAMERA_PERM) {
+            Log.d(TAG, "Got unexpected permission result: $requestCode")
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+            return
+        }
+
+        if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            Log.d(TAG, "Camera permission granted - initialize the camera source")
+            // We have permission, so create the camerasource
+            val autoFocus = activity!!.intent.getBooleanExtra(AutoFocus, false)
+            val useFlash = activity!!.intent.getBooleanExtra(UseFlash, false)
+            createCameraSource(autoFocus, useFlash)
+            return
+        }
+
+        Log.e(TAG, "Permission not granted: results len = " + grantResults.size +
+                " Result code = " + if (grantResults.isNotEmpty()) grantResults[0] else "(empty)")
+
+        val listener = DialogInterface.OnClickListener { dialog, id -> activity!!.finish() }
+
+        val builder = AlertDialog.Builder(activity)
+        builder.setTitle("Multitracker sample")
+                .setMessage(R.string.no_camera_permission)
+                .setPositiveButton(R.string.ok, listener)
+                .show()
+    }
+    @SuppressLint("MissingPermission") //TODO: If something bad occurs, look here first
+    private fun startCameraSource() {
+        // Check that the device has play services available.
+        var code = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(
+                activity!!.applicationContext)
+        if (code != ConnectionResult.SUCCESS) {
+            var dlg = GoogleApiAvailability.getInstance().getErrorDialog(activity!!, code, RC_HANDLE_GMS)
+            dlg.show()
+        }
+
+        if (mCameraSource != null) {
+            try {
+                mPreview!!.start(mCameraSource, mGraphicOverlay);
+            } catch (e : IOException) {
+                Log.e(TAG, "Unable to start camera source.", e)
+                mCameraSource!!.release()
+                mCameraSource = null
+            }
+        }
+    }
+    /**
+     * onTap is called to capture the first TextBlock under the tap location and return it to
+     * the Initializing Activity.
+     *
+     * @param rawX - the raw position of the tap
+     * @param rawY - the raw position of the tap.
+     * @return true if the activity is ending.
+     */
+    private fun onTap(rawX : Float ,rawY : Float) : Boolean {
+        var graphic = mGraphicOverlay!!.getGraphicAtLocation(rawX, rawY)
+        var text : TextBlock? = null
+        if (graphic != null) {
+            text = graphic.textBlock
+            if (text != null && text.value != null) {
+                var data = Intent()
+                data.putExtra(TextBlockObject, text.value)
+                activity!!.setResult(CommonStatusCodes.SUCCESS, data)
+                activity!!.finish()
+            }
+            else {
+                Log.d(TAG, "text data is null")
+            }
+        }
+        else {
+            Log.d(TAG,"no text detected")
+        }
+        return text != null
+    }
+
+    private inner class CaptureGestureListener : GestureDetector.SimpleOnGestureListener() {
+
+        override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+            return onTap(e.rawX, e.rawY) || super.onSingleTapConfirmed(e)
+        }
+    }
+
+    private inner class ScaleListener : ScaleGestureDetector.OnScaleGestureListener {
+
+        /**
+         * Responds to scaling events for a gesture in progress.
+         * Reported by pointer motion.
+         *
+         * @param detector The detector reporting the event - use this to
+         * retrieve extended info about event state.
+         * @return Whether or not the detector should consider this event
+         * as handled. If an event was not handled, the detector
+         * will continue to accumulate movement until an event is
+         * handled. This can be useful if an application, for example,
+         * only wants to update scaling factors if the change is
+         * greater than 0.01.
+         */
+        override fun onScale(detector: ScaleGestureDetector): Boolean {
+            return false
+        }
+
+        /**
+         * Responds to the beginning of a scaling gesture. Reported by
+         * new pointers going down.
+         *
+         * @param detector The detector reporting the event - use this to
+         * retrieve extended info about event state.
+         * @return Whether or not the detector should continue recognizing
+         * this gesture. For example, if a gesture is beginning
+         * with a focal point outside of a region where it makes
+         * sense, onScaleBegin() may return false to ignore the
+         * rest of the gesture.
+         */
+        override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
+            return true
+        }
+
+        /**
+         * Responds to the end of a scale gesture. Reported by existing
+         * pointers going up.
+         *
+         *
+         * Once a scale has ended, [ScaleGestureDetector.getFocusX]
+         * and [ScaleGestureDetector.getFocusY] will return focal point
+         * of the pointers remaining on the screen.
+         *
+         * @param detector The detector reporting the event - use this to
+         * retrieve extended info about event state.
+         */
+        override fun onScaleEnd(detector: ScaleGestureDetector) {
+            mCameraSource!!.doZoom(detector.scaleFactor)
         }
     }
     companion object {
-        private const val TAG = "CameraFragment"
-        private val ORIENTATIONS = SparseIntArray()
+        private const val TAG = "OcrCaptureActivity"
 
-        init {
-            ORIENTATIONS.append(Surface.ROTATION_0, 90)
-            ORIENTATIONS.append(Surface.ROTATION_90, 0)
-            ORIENTATIONS.append(Surface.ROTATION_180, 270)
-            ORIENTATIONS.append(Surface.ROTATION_270, 180)
-        }
+        // Intent request code to handle updating play services if needed.
+        private const val RC_HANDLE_GMS = 9001
 
-        private const val REQUEST_CAMERA_PERMISSION = 200
+        // Permission request codes need to be < 256
+        private const val RC_HANDLE_CAMERA_PERM = 2
+
+        // Constants used to pass extra data in the intent
+        const val AutoFocus = "AutoFocus"
+        const val UseFlash = "UseFlash"
+        const val TextBlockObject = "String"
+
+
     }
 }
