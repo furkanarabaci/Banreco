@@ -54,7 +54,6 @@ class CameraFragment : Fragment() {
     private val stateCallback = object : CameraDevice.StateCallback() {
         override fun onOpened(camera: CameraDevice) {
             //This is called when the camera is open
-            Log.e(CameraFragment.TAG, "onOpened")
             cameraDevice = camera
             createCameraPreview()
         }
@@ -219,7 +218,6 @@ class CameraFragment : Fragment() {
 
     private fun openCamera() {
         val manager = activity.getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        Log.e(CameraFragment.TAG, "is camera open")
         try {
             cameraId = manager.cameraIdList[0]
             val characteristics = manager.getCameraCharacteristics(cameraId!!)
@@ -235,7 +233,6 @@ class CameraFragment : Fragment() {
             e.printStackTrace()
         }
 
-        Log.e(CameraFragment.TAG, "openCamera X")
     }
 
     private fun updatePreview() {
@@ -262,7 +259,6 @@ class CameraFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        Log.e(CameraFragment.TAG, "onResume")
         startBackgroundThread()
         if (textureView!!.isAvailable) {
             openCamera()
@@ -272,8 +268,7 @@ class CameraFragment : Fragment() {
     }
 
     override fun onPause() {
-        Log.e(CameraFragment.TAG, "onPause")
-        //closeCamera();
+        closeCamera()
         stopBackgroundThread()
         super.onPause()
     }

@@ -37,5 +37,5 @@
             android:name=".SettingsActivity"
             android:label="@string/title_activity_settings"/>
     </application>
-
+    <meta-data android:name="com.google.android.gms.vision.DEPENDENCIES" android:value="ocr"/>
 </manifest>
