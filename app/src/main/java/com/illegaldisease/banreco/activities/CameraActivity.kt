@@ -60,7 +60,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                 .requestProfile()
                 .build()
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
-        //initializeDra werBar() Commented out until i find a way to update drawer runtime
+        //initializeDrawerBar() Commented out until i find a way to update drawer runtime
     }
     override fun onStart() {
         super.onStart()
