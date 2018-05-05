@@ -4,10 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
-import android.content.ContentUris
-import android.content.DialogInterface
-import android.content.Intent
-import android.content.IntentFilter
+import android.content.*
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
@@ -50,6 +47,7 @@ import com.illegaldisease.banreco.camera.GraphicOverlay
 import com.wdullaer.materialdatetimepicker.date.DatePickerDialog
 import com.wdullaer.materialdatetimepicker.time.TimePickerDialog
 import java.io.IOException
+import java.net.InetAddress
 
 import java.util.*
 
@@ -84,6 +82,24 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     private var profileName : String? = null
     private var lastEventDate : Calendar? = null
 
+    private fun isNetworkConnected() : Boolean {
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        return cm.activeNetworkInfo != null
+    }
+
+    fun isInternetAvailable(): Boolean {
+        if(!isNetworkConnected()){
+            return false //No network is connected at the first place.
+        }
+        try {
+            val ipAddr = InetAddress.getByName("google.com")
+            //You can replace it with your name
+            return !ipAddr.equals("")
+        } catch (e: Exception) {
+            return false
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
@@ -102,8 +118,12 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
         mPreview = findViewById(R.id.preview)
         mGraphicOverlay = findViewById(R.id.graphicOverlay)
-        buildCamera()
-        //initializeDrawerBar() //Commented out until i find a way to update drawer runtime
+        if(isInternetAvailable()){
+            buildCamera()
+        }
+        else{
+            Toast.makeText(this,"No internet available.",Toast.LENGTH_LONG).show() //TODO: Warm it a little better.
+        }
     }
     override fun onStart() {
         super.onStart()
@@ -134,7 +154,6 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         lastEventDate!!.set(Calendar.MINUTE, minute)
         lastEventDate!!.set(Calendar.SECOND, second)
     }
-
     override fun dispatchTouchEvent(e: MotionEvent?): Boolean {
         val b = scaleGestureDetector!!.onTouchEvent(e)
 
