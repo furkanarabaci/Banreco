@@ -33,7 +33,7 @@
                         Please re-launch app if you cleared cache or data.</string>
     <string name="alertdialogtitle">Downloading libraries</string>
     <string name="alertdialogclearcache">CLEAR CACHE</string>
-    <string name="alertdialogquit">RELOGIN</string>
+    <string name="alertdialogrestart">RELOGIN</string>
 
     <!-- Strings related to Settings -->
 

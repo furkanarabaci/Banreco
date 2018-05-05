@@ -75,7 +75,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     private var mCameraSource: CameraSource? = null
     private var mPreview: CameraSourcePreview? = null
     private var mGraphicOverlay: GraphicOverlay<OcrGraphic>? = null
-    private var alertBuilder : AlertDialog.Builder? = null
+    private var alertDialog : AlertDialog? = null
 
     // Helper objects for detecting taps and pinches.
     private var gestureDetector: GestureDetector? = null
@@ -118,7 +118,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
 
         mPreview = findViewById(R.id.preview)
         mGraphicOverlay = findViewById(R.id.graphicOverlay)
-        showAlertDialog()
+        createAlertDialog() //Only creates, does not show it.
 
     }
     override fun onStart() {
@@ -199,38 +199,37 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                 .show()
     }
 
-    private fun showAlertDialog(){
+    private fun createAlertDialog(){
 //      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        alertBuilder = AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert) //We use Lollipop+ anyways.
+        val alertBuilder: AlertDialog.Builder = AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
+        //We use Lollipop+ anyways.
 //      } else {
 //          alertBuilder = AlertDialog.Builder(this)
 //      }
         alertBuilder!!.setTitle(R.string.alertdialogtitle)
                 .setMessage(R.string.alertdialogmessage)
-                .setPositiveButton(R.string.alertdialogclearcache, object : DialogInterface.OnClickListener  {
-                    override fun onClick( dialog : DialogInterface, which : Int ) {
-                        val thePackageName = "com.google.android.gms"
-                        try {
-                            //Open the specific App Info page:
-                            val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                            intent.data = Uri.parse("package:" + thePackageName)
-                            startActivity(intent)
+                .setPositiveButton(R.string.alertdialogclearcache) { _, _ ->
+                    val thePackageName = "com.google.android.gms"
+                    try {
+                        //Open the specific App Info page:
+                        val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        intent.data = Uri.parse("package:$thePackageName")
+                        startActivity(intent)
 
-                        } catch ( e : ActivityNotFoundException) {
-                            //e.printStackTrace();
-                            //Open the generic Apps page:
-                            val intent = Intent(android.provider.Settings.ACTION_MANAGE_APPLICATIONS_SETTINGS)
-                            startActivity(intent)
-                        }
+                    } catch ( e : ActivityNotFoundException) {
+                        //e.printStackTrace();
+                        //Open the generic Apps page:
+                        val intent = Intent(android.provider.Settings.ACTION_MANAGE_APPLICATIONS_SETTINGS)
+                        startActivity(intent)
                     }
-                }).setNegativeButton(R.string.alertdialogquit, object : DialogInterface.OnClickListener {
-                    override fun onClick(dialog : DialogInterface, which : Int) {
-                        finish()
-                        System.exit(0) //Exit with success
-                    }
-                })
+                }.setNegativeButton(R.string.alertdialogrestart) { _, _ ->
+                    val i = baseContext.packageManager.getLaunchIntentForPackage(baseContext.packageName)
+                    i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    startActivity(i)
+                    finish()
+                }
                 .setIcon(android.R.drawable.ic_dialog_alert)
-                .show()
+        alertDialog = alertBuilder.create() //Show or destroy it whenever you want.
     }
     private fun initializeDrawerBar(){
         drawer {
@@ -424,7 +423,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
              * available. The detectors will automatically become operational once the library
              * downloads complete on device.
             */
-            //TODO:Also call that progress bar you will implement here.
+            alertDialog!!.show() //Always try to show it.
             // Check for low storage.  If there is low storage, the native library will not be
             // downloaded, so detection will not become operational.
             val lowstorageFilter = IntentFilter(Intent.ACTION_DEVICE_STORAGE_LOW) //TODO: Find an alternative
@@ -435,6 +434,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
             }
         }
         else{
+            alertDialog!!.dismiss()
             // Creates and starts the camera.  Note that this uses a higher resolution in comparison
             // to other detection examples to enable the text recognizer to detect small pieces of text.
             mCameraSource = CameraSource.Builder(applicationContext, textRecognizer)
