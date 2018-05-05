@@ -17,10 +17,12 @@ import android.hardware.Camera //Deprecated but who cares ? If i am bored, i wil
 import android.net.Uri
 import android.os.Build
 import android.provider.CalendarContract
+import android.support.design.widget.CoordinatorLayout
 import android.support.design.widget.Snackbar
 import android.support.v4.app.ActivityCompat
 import android.util.Log
 import android.view.*
+import android.widget.ProgressBar
 import android.widget.Toast
 
 import co.zsmb.materialdrawerkt.builders.accountHeader
@@ -75,7 +77,9 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     private var mCameraSource: CameraSource? = null
     private var mPreview: CameraSourcePreview? = null
     private var mGraphicOverlay: GraphicOverlay<OcrGraphic>? = null
+
     private var alertDialog : AlertDialog? = null
+    private var progressBar : ProgressBar? = null
 
     // Helper objects for detecting taps and pinches.
     private var gestureDetector: GestureDetector? = null
@@ -91,11 +95,13 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
 
     override fun onInternetConnectivityChanged(isConnected: Boolean) {
         if(isConnected){
+            progressBar!!.visibility = ProgressBar.INVISIBLE
             buildCamera()
             checkSignIn() // Attempts to login with async callbacks. be careful.
         }
         else{
-            //TODO: Show some progress bar or something.
+            Snackbar.make(window.decorView.rootView,"Waiting for internet connection",Snackbar.LENGTH_LONG).show()
+            progressBar!!.visibility = ProgressBar.VISIBLE
         }
     }
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -118,6 +124,8 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
 
         mPreview = findViewById(R.id.preview)
         mGraphicOverlay = findViewById(R.id.graphicOverlay)
+
+        progressBar = findViewById(R.id.indeterminateBar)
         createAlertDialog() //Only creates, does not show it.
 
     }
