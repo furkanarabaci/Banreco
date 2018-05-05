@@ -44,14 +44,19 @@ import com.illegaldisease.banreco.R
 import com.illegaldisease.banreco.camera.CameraSource
 import com.illegaldisease.banreco.camera.CameraSourcePreview
 import com.illegaldisease.banreco.camera.GraphicOverlay
+import com.treebo.internetavailabilitychecker.InternetAvailabilityChecker
+import com.treebo.internetavailabilitychecker.InternetConnectivityListener
 import com.wdullaer.materialdatetimepicker.date.DatePickerDialog
 import com.wdullaer.materialdatetimepicker.time.TimePickerDialog
 import java.io.IOException
-import java.net.InetAddress
+import java.net.HttpURLConnection
+import java.net.URL
 
 import java.util.*
 
-class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,DatePickerDialog.OnDateSetListener {
+class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,DatePickerDialog.OnDateSetListener, InternetConnectivityListener {
+
+
     companion object {
         private const val RC_SIGN_IN = 9001
         private const val TAG = "OcrCaptureActivity"
@@ -72,7 +77,6 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     private var mGraphicOverlay: GraphicOverlay<OcrGraphic>? = null
 
     // Helper objects for detecting taps and pinches.
-    private var scaleGestureDetector: ScaleGestureDetector? = null
     private var gestureDetector: GestureDetector? = null
 
     private var mGoogleSignInClient : GoogleSignInClient? = null
@@ -82,29 +86,23 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     private var profileName : String? = null
     private var lastEventDate : Calendar? = null
 
-    private fun isNetworkConnected() : Boolean {
-        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        return cm.activeNetworkInfo != null
-    }
+    private var mInternetAvailabilityChecker : InternetAvailabilityChecker? = null
 
-    fun isInternetAvailable(): Boolean {
-        if(!isNetworkConnected()){
-            return false //No network is connected at the first place.
+    override fun onInternetConnectivityChanged(isConnected: Boolean) {
+        if(isConnected){
+            buildCamera()
+            checkSignIn() // Attempts to login with async callbacks. be careful.
         }
-        try {
-            val ipAddr = InetAddress.getByName("google.com")
-            //You can replace it with your name
-            return !ipAddr.equals("")
-        } catch (e: Exception) {
-            return false
+        else{
+            Toast.makeText(this,"Not connected",Toast.LENGTH_LONG).show()
         }
-    }
 
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         setContentView(R.layout.activity_camera)
-
+        InternetAvailabilityChecker.init(this)
         profilePic = BitmapFactory.decodeResource(this@CameraActivity.resources, R.drawable.photo1)
         profileMail = "notsignedin@placeholder.com" //Placeholder values
         profileName = "Anonymouse" //I know it is anonymous, it is intended.
@@ -118,16 +116,12 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
         mPreview = findViewById(R.id.preview)
         mGraphicOverlay = findViewById(R.id.graphicOverlay)
-        if(isInternetAvailable()){
-            buildCamera()
-        }
-        else{
-            Toast.makeText(this,"No internet available.",Toast.LENGTH_LONG).show() //TODO: Warm it a little better.
-        }
     }
     override fun onStart() {
         super.onStart()
-        checkSignIn() // Attempts to login with async callbacks. be careful.
+        mInternetAvailabilityChecker = InternetAvailabilityChecker.getInstance()
+        mInternetAvailabilityChecker!!.addInternetConnectivityListener(this)
+
     }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -155,10 +149,9 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         lastEventDate!!.set(Calendar.SECOND, second)
     }
     override fun dispatchTouchEvent(e: MotionEvent?): Boolean {
-        val b = scaleGestureDetector!!.onTouchEvent(e)
-
         val c = gestureDetector!!.onTouchEvent(e)
-        return b || c || super.dispatchTouchEvent(e)
+
+        return c || super.dispatchTouchEvent(e)
     }
     override fun onResume() {
         super.onResume()
@@ -172,6 +165,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     }
     override fun onDestroy() {
         super.onDestroy()
+        mInternetAvailabilityChecker!!.removeInternetConnectivityChangeListener(this)
         if (mPreview != null) {
             mPreview!!.release()
         }
@@ -276,17 +270,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         val intent = Intent(Intent.ACTION_VIEW).setData(builder.build())
         startActivity(intent)
     }
-    private fun isOnline(): Boolean {
-        val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
-
-        val activeNetwork = cm.activeNetworkInfo
-        return activeNetwork != null && activeNetwork.isConnectedOrConnecting
-    }
     private fun checkSignIn(){
-        if(!isOnline()){
-            //Means we are not connected to internet. Prompt user and leave if necessary
-            //TODO: Add dialog here.
-        }
         val task = mGoogleSignInClient!!.silentSignIn()
         if (task.isSuccessful) {
             // There's immediate result available.
@@ -347,7 +331,6 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
             requestCameraPermission()
         }
         gestureDetector = GestureDetector(this, CaptureGestureListener())
-        scaleGestureDetector = ScaleGestureDetector(this, ScaleListener())
 
     }
 
@@ -487,57 +470,6 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
 
         override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
             return onTap(e.rawX, e.rawY) || super.onSingleTapConfirmed(e)
-        }
-    }
-    private inner class ScaleListener : ScaleGestureDetector.OnScaleGestureListener {
-
-        /**
-         * Responds to scaling events for a gesture in progress.
-         * Reported by pointer motion.
-         *
-         * @param detector The detector reporting the event - use this to
-         * retrieve extended info about event state.
-         * @return Whether or not the detector should consider this event
-         * as handled. If an event was not handled, the detector
-         * will continue to accumulate movement until an event is
-         * handled. This can be useful if an application, for example,
-         * only wants to update scaling factors if the change is
-         * greater than 0.01.
-         */
-        override fun onScale(detector: ScaleGestureDetector): Boolean {
-            return false
-        }
-
-        /**
-         * Responds to the beginning of a scaling gesture. Reported by
-         * new pointers going down.
-         *
-         * @param detector The detector reporting the event - use this to
-         * retrieve extended info about event state.
-         * @return Whether or not the detector should continue recognizing
-         * this gesture. For example, if a gesture is beginning
-         * with a focal point outside of a region where it makes
-         * sense, onScaleBegin() may return false to ignore the
-         * rest of the gesture.
-         */
-        override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
-            return true
-        }
-
-        /**
-         * Responds to the end of a scale gesture. Reported by existing
-         * pointers going up.
-         *
-         *
-         * Once a scale has ended, [ScaleGestureDetector.getFocusX]
-         * and [ScaleGestureDetector.getFocusY] will return focal point
-         * of the pointers remaining on the screen.
-         *
-         * @param detector The detector reporting the event - use this to
-         * retrieve extended info about event state.
-         */
-        override fun onScaleEnd(detector: ScaleGestureDetector) {
-            mCameraSource!!.doZoom(detector.scaleFactor)
         }
     }
 }
