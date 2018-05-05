@@ -30,7 +30,12 @@ dependencies {
         versions_supportLib = '27+'
         version_gmsLib = '15.0.1'
     }
-
+    implementation 'pub.devrel:easypermissions:1.2.0'
+    implementation "org.jetbrains.anko:anko-sqlite:0.10.4"
+    implementation "com.treebo:internetavailabilitychecker:1.0.1"
+    implementation ('com.wdullaer:materialdatetimepicker:3.5.1') {
+        exclude group: 'com.android.support'
+    }
     implementation 'co.zsmb:materialdrawer-kt:1.3.4'
     implementation 'com.github.bumptech.glide:glide:4.4.0'
 
@@ -51,10 +56,5 @@ dependencies {
     implementation 'com.google.gms:google-services:3.1.2'
     implementation 'com.android.support.constraint:constraint-layout:1.1.0'
 
-    implementation 'pub.devrel:easypermissions:1.2.0'
-    implementation "org.jetbrains.anko:anko-sqlite:0.10.4"
-    implementation "com.treebo:internetavailabilitychecker:1.0.1"
-    implementation ('com.wdullaer:materialdatetimepicker:3.5.1') {
-        exclude group: 'com.android.support'
-    }
+
 }

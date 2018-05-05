@@ -26,6 +26,14 @@
     <string name="ocr_success">Text read successfully</string>
     <string name="ocr_failure">No text captured</string>
     <string name="ocr_error">"Error reading text: %1$s"</string>
+    <string name="alertdialogmessage">Currently, google play services is downloading native libraries needed by this application.
+                        This might last up to 10 minutes depending on internet connection ( Will download around 8MB )
+                        If this message does not disappear by then, click Clear Cache button and press Clear Cache.
+                        If that does not work, try to clear data. This can be under Manage Data tab.
+                        Please re-launch app if you cleared cache or data.</string>
+    <string name="alertdialogtitle">Downloading libraries</string>
+    <string name="alertdialogclearcache">CLEAR CACHE</string>
+    <string name="alertdialogquit">RELOGIN</string>
 
     <!-- Strings related to Settings -->
 
