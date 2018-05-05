@@ -100,13 +100,91 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                 .requestProfile()
                 .build()
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
-        buildThings()
+        mPreview = findViewById(R.id.preview)
+        mGraphicOverlay = findViewById(R.id.graphicOverlay)
+        buildCamera()
         //initializeDrawerBar() //Commented out until i find a way to update drawer runtime
     }
     override fun onStart() {
         super.onStart()
         checkSignIn() // Attempts to login with async callbacks. be careful.
     }
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if(requestCode == RC_SIGN_IN){
+            if(resultCode == Activity.RESULT_OK){
+                val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+                signInAccount = task.result //This is newly signed in user.
+                postSignIn()
+            }
+            else{
+                //TODO: Sign in is cancelled, do something else ?
+                initializeDrawerBar() // Initialize it with placeholders. Program will probably cease to work eventually.
+            }
+        }
+    }
+    override fun onDateSet(view: DatePickerDialog?, year: Int, monthOfYear: Int, dayOfMonth: Int) {
+        lastEventDate!!.set(Calendar.MONTH, monthOfYear)
+        lastEventDate!!.set(Calendar.YEAR, year)
+        lastEventDate!!.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+        pickTime()
+    }
+    override fun onTimeSet(view: TimePickerDialog?, hourOfDay: Int, minute: Int, second: Int) {
+        lastEventDate!!.set(Calendar.HOUR_OF_DAY, hourOfDay)
+        lastEventDate!!.set(Calendar.MINUTE, minute)
+        lastEventDate!!.set(Calendar.SECOND, second)
+    }
+
+    override fun dispatchTouchEvent(e: MotionEvent?): Boolean {
+        val b = scaleGestureDetector!!.onTouchEvent(e)
+
+        val c = gestureDetector!!.onTouchEvent(e)
+        return b || c || super.dispatchTouchEvent(e)
+    }
+    override fun onResume() {
+        super.onResume()
+        startCameraSource()
+    }
+    override fun onPause() {
+        super.onPause()
+        if (mPreview != null) {
+            mPreview!!.stop()
+        }
+    }
+    override fun onDestroy() {
+        super.onDestroy()
+        if (mPreview != null) {
+            mPreview!!.release()
+        }
+    }
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        if (requestCode != RC_HANDLE_CAMERA_PERM) {
+            Log.d(TAG, "Got unexpected permission result: $requestCode")
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+            return
+        }
+
+        if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            Log.d(TAG, "Camera permission granted - initialize the camera source")
+            // We have permission, so create the camerasource
+            val autoFocus = this.intent.getBooleanExtra(AutoFocus, false)
+            val useFlash = this.intent.getBooleanExtra(UseFlash, false)
+            createCameraSource(autoFocus, useFlash)
+            return
+        }
+
+        Log.e(TAG, "Permission not granted: results len = " + grantResults.size +
+                " Result code = " + if (grantResults.isNotEmpty()) grantResults[0] else "(empty)")
+
+        val listener = DialogInterface.OnClickListener { dialog, id -> finish() }
+
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Multitracker sample")
+                .setMessage(R.string.no_camera_permission)
+                .setPositiveButton(R.string.ok, listener)
+                .show()
+    }
+
     private fun initializeDrawerBar(){
         drawer {
             accountHeader{
@@ -236,54 +314,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         startActivityForResult(signInIntent, RC_SIGN_IN) //We checked internet connection before
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if(requestCode == RC_SIGN_IN){
-            if(resultCode == Activity.RESULT_OK){
-                val task = GoogleSignIn.getSignedInAccountFromIntent(data)
-                signInAccount = task.result //This is newly signed in user.
-                postSignIn()
-            }
-            else{
-                //TODO: Sign in is cancelled, do something else ?
-                initializeDrawerBar() // Initialize it with placeholders. Program will probably cease to work at other steps.
-            }
-        }
-    }
-    private fun pickTime(){
-        val tpd = TimePickerDialog.newInstance(
-                this@CameraActivity,
-                true //TODO: You might consider time modes
-        )
-        tpd.show(fragmentManager,"TimePicker")
-        tpd.version = TimePickerDialog.Version.VERSION_2
-    }
-    private fun pickDate(){
-        val now = Calendar.getInstance()
-        val dpd = DatePickerDialog.newInstance(
-                this@CameraActivity,
-                now.get(Calendar.YEAR),
-                now.get(Calendar.MONTH),
-                now.get(Calendar.DAY_OF_MONTH)
-        )
-        dpd.show(fragmentManager, "DatePicker")
-        dpd.version = DatePickerDialog.Version.VERSION_2
-    }
-    override fun onDateSet(view: DatePickerDialog?, year: Int, monthOfYear: Int, dayOfMonth: Int) {
-        lastEventDate!!.set(Calendar.MONTH, monthOfYear)
-        lastEventDate!!.set(Calendar.YEAR, year)
-        lastEventDate!!.set(Calendar.DAY_OF_MONTH, dayOfMonth)
-        pickTime()
-    }
-    override fun onTimeSet(view: TimePickerDialog?, hourOfDay: Int, minute: Int, second: Int) {
-        lastEventDate!!.set(Calendar.HOUR_OF_DAY, hourOfDay)
-        lastEventDate!!.set(Calendar.MINUTE, minute)
-        lastEventDate!!.set(Calendar.SECOND, second)
-    }
-    private fun buildThings(){
-        mPreview = findViewById<CameraSourcePreview>(R.id.preview)
-        mGraphicOverlay = findViewById(R.id.graphicOverlay) as GraphicOverlay<OcrGraphic>
-
+    private fun buildCamera(){
         // read parameters from the intent used to launch the activity.
         val autoFocus = intent.getBooleanExtra(AutoFocus, false)
         val useFlash = intent.getBooleanExtra(UseFlash, false)
@@ -323,12 +354,24 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                 .show()
     }
 
-    override fun onTouchEvent(e: MotionEvent): Boolean {
-        val b = scaleGestureDetector!!.onTouchEvent(e)
-
-        val c = gestureDetector!!.onTouchEvent(e)
-
-        return b || c || this.onTouchEvent(e)
+    private fun pickTime(){
+        val tpd = TimePickerDialog.newInstance(
+                this@CameraActivity,
+                true
+        )
+        tpd.show(fragmentManager,"TimePicker")
+        tpd.version = TimePickerDialog.Version.VERSION_2
+    }
+    private fun pickDate(){
+        val now = Calendar.getInstance()
+        val dpd = DatePickerDialog.newInstance(
+                this@CameraActivity,
+                now.get(Calendar.YEAR),
+                now.get(Calendar.MONTH),
+                now.get(Calendar.DAY_OF_MONTH)
+        )
+        dpd.show(fragmentManager, "DatePicker")
+        dpd.version = DatePickerDialog.Version.VERSION_2
     }
 
     /**
@@ -345,7 +388,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         // A text recognizer is created to find text.  An associated processor instance
         // is set to receive the text recognition results and display graphics for each text block
         // on screen.
-        val textRecognizer = TextRecognizer.Builder(this).build()
+        val textRecognizer = TextRecognizer.Builder(this.applicationContext).build()
         textRecognizer.setProcessor(OcrDetectorProcessor(mGraphicOverlay))
 
         if (!textRecognizer.isOperational) {
@@ -362,98 +405,26 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
 
             // Check for low storage.  If there is low storage, the native library will not be
             // downloaded, so detection will not become operational.
-            val lowstorageFilter = IntentFilter(Intent.ACTION_DEVICE_STORAGE_LOW)
-            val hasLowStorage = this.registerReceiver(null, lowstorageFilter) != null
-
-            if (hasLowStorage) {
-                Toast.makeText(this, R.string.low_storage_error, Toast.LENGTH_LONG).show()
-                Log.w(TAG, getString(R.string.low_storage_error))
-            }
+//            val lowstorageFilter = IntentFilter(Intent.ACTION_DEVICE_STORAGE_LOW) //TODO: Find an alternative
+//            val hasLowStorage = this.registerReceiver(null, lowstorageFilter) != null
+//
+//            if (hasLowStorage) {
+//                Toast.makeText(this, R.string.low_storage_error, Toast.LENGTH_LONG).show()
+//                Log.w(TAG, getString(R.string.low_storage_error))
+//            }
+        }
+        else{
+            // Creates and starts the camera.  Note that this uses a higher resolution in comparison
+            // to other detection examples to enable the text recognizer to detect small pieces of text.
+            mCameraSource = CameraSource.Builder(this, textRecognizer)
+                    .setFacing(CameraSource.CAMERA_FACING_BACK)
+                    .setRequestedPreviewSize(1280, 1024)
+                    .setRequestedFps(2.0f)
+                    .build()
         }
 
-        // Creates and starts the camera.  Note that this uses a higher resolution in comparison
-        // to other detection examples to enable the text recognizer to detect small pieces of text.
-        mCameraSource = CameraSource.Builder(this, textRecognizer)
-                .setFacing(CameraSource.CAMERA_FACING_BACK) //TODO: Change this
-                .setRequestedPreviewSize(1280, 1024)
-                .setRequestedFps(2.0f)
-                .build()
     }
-
-    /**
-     * Restarts the camera.
-     */
-    override fun onResume() {
-        super.onResume()
-        startCameraSource()
-    }
-
-    /**
-     * Stops the camera.
-     */
-    override fun onPause() {
-        super.onPause()
-        if (mPreview != null) {
-            mPreview!!.stop()
-        }
-    }
-
-    /**
-     * Releases the resources associated with the camera source, the associated detectors, and the
-     * rest of the processing pipeline.
-     */
-    override fun onDestroy() {
-        super.onDestroy()
-        if (mPreview != null) {
-            mPreview!!.release()
-        }
-    }
-
-    /**
-     * Callback for the result from requesting permissions. This method
-     * is invoked for every call on [.requestPermissions].
-     *
-     *
-     * **Note:** It is possible that the permissions request interaction
-     * with the user is interrupted. In this case you will receive empty permissions
-     * and results arrays which should be treated as a cancellation.
-     *
-     *
-     * @param requestCode  The request code passed in [.requestPermissions].
-     * @param permissions  The requested permissions. Never null.
-     * @param grantResults The grant results for the corresponding permissions
-     * which is either [PackageManager.PERMISSION_GRANTED]
-     * or [PackageManager.PERMISSION_DENIED]. Never null.
-     * @see .requestPermissions
-     */
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        if (requestCode != RC_HANDLE_CAMERA_PERM) {
-            Log.d(TAG, "Got unexpected permission result: $requestCode")
-            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-            return
-        }
-
-        if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            Log.d(TAG, "Camera permission granted - initialize the camera source")
-            // We have permission, so create the camerasource
-            val autoFocus = this.intent.getBooleanExtra(AutoFocus, false)
-            val useFlash = this.intent.getBooleanExtra(UseFlash, false)
-            createCameraSource(autoFocus, useFlash)
-            return
-        }
-
-        Log.e(TAG, "Permission not granted: results len = " + grantResults.size +
-                " Result code = " + if (grantResults.isNotEmpty()) grantResults[0] else "(empty)")
-
-        val listener = DialogInterface.OnClickListener { dialog, id -> finish() }
-
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Multitracker sample")
-                .setMessage(R.string.no_camera_permission)
-                .setPositiveButton(R.string.ok, listener)
-                .show()
-    }
-    @SuppressLint("MissingPermission") //TODO: If something bad occurs, look here first
+    @SuppressLint("MissingPermission")
     private fun startCameraSource() {
         // Check that the device has play services available.
         var code = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(
@@ -462,7 +433,6 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
             var dlg = GoogleApiAvailability.getInstance().getErrorDialog(this, code, RC_HANDLE_GMS)
             dlg.show()
         }
-
         if (mCameraSource != null) {
             try {
                 mPreview!!.start(mCameraSource, mGraphicOverlay)
@@ -473,14 +443,6 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
             }
         }
     }
-    /**
-     * onTap is called to capture the first TextBlock under the tap location and return it to
-     * the Initializing Activity.
-     *
-     * @param rawX - the raw position of the tap
-     * @param rawY - the raw position of the tap.
-     * @return true if the activity is ending.
-     */
     private fun onTap(rawX : Float ,rawY : Float) : Boolean {
         var graphic = mGraphicOverlay!!.getGraphicAtLocation(rawX, rawY)
         var text : TextBlock? = null
@@ -490,7 +452,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                 var data = Intent()
                 data.putExtra(TextBlockObject, text.value)
                 setResult(CommonStatusCodes.SUCCESS, data)
-                finish()
+                Toast.makeText(this,text.value,Toast.LENGTH_LONG).show() //TODO: This is just for testing purposes
             }
             else {
                 Log.d(TAG, "text data is null")
@@ -508,7 +470,6 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
             return onTap(e.rawX, e.rawY) || super.onSingleTapConfirmed(e)
         }
     }
-
     private inner class ScaleListener : ScaleGestureDetector.OnScaleGestureListener {
 
         /**

@@ -23,9 +23,7 @@
         android:layout_height="56dp"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="24dp"
-        android:src="@drawable/ic_camera"
-        android:backgroundTint="@color/colorPrimary" />
-
+        android:layout_marginBottom="16px"
+        android:src="@drawable/ic_camera" />
 </RelativeLayout>
 
