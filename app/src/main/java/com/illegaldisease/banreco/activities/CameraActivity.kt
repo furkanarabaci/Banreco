@@ -15,9 +15,7 @@ import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
 import android.hardware.Camera //Deprecated but who cares ? If i am bored, i will switch to camera2 again.
 import android.net.Uri
-import android.os.Build
 import android.provider.CalendarContract
-import android.support.design.widget.CoordinatorLayout
 import android.support.design.widget.Snackbar
 import android.support.v4.app.ActivityCompat
 import android.util.Log
@@ -47,6 +45,7 @@ import com.google.android.gms.vision.text.TextRecognizer
 import com.illegaldisease.banreco.OcrDetectorProcessor
 import com.illegaldisease.banreco.OcrGraphic
 import com.illegaldisease.banreco.R
+import com.illegaldisease.banreco.UnsupportedDevices
 import com.illegaldisease.banreco.camera.CameraSource
 import com.illegaldisease.banreco.camera.CameraSourcePreview
 import com.illegaldisease.banreco.camera.GraphicOverlay
@@ -94,7 +93,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     private var mInternetAvailabilityChecker : InternetAvailabilityChecker? = null
 
     override fun onInternetConnectivityChanged(isConnected: Boolean) {
-        if(isConnected){
+        if(isConnected && isSupported()){
             progressBar!!.visibility = ProgressBar.INVISIBLE
             buildCamera()
             checkSignIn() // Attempts to login with async callbacks. be careful.
@@ -109,7 +108,6 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         setContentView(R.layout.activity_camera)
         InternetAvailabilityChecker.init(this)
-
         profilePic = BitmapFactory.decodeResource(this@CameraActivity.resources, R.drawable.photo1)
         profileMail = "notsignedin@placeholder.com" //Placeholder values
         profileName = "Anonymouse" //I know it is anonymous, it is intended.
@@ -358,6 +356,37 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         startActivityForResult(signInIntent, RC_SIGN_IN) //We checked internet connection before
     }
 
+    private fun isSupported() : Boolean{
+        var deviceName = android.os.Build.DEVICE
+        if(deviceName.isNullOrBlank()) {
+            //TODO: You might warn user about things going on in this scope.
+            return false
+        }
+        deviceName = deviceName.toLowerCase()
+        // Some devices crash on a certain version of Google Play Services.
+        // https://github.com/googlesamples/android-vision/issues/269#issuecomment-339464902
+        // We therefore check for it here.
+        if(UnsupportedDevices().deviceWithDisabledTextCheck!!.contains(deviceName)){
+            //Well, end of the line. sorry. Device is not supported by Vision API. Warn user.
+            val alertBuilder: AlertDialog.Builder = AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
+            alertBuilder.setTitle(R.string.devicenotsupportedtitle)
+                    .setMessage(R.string.devicenotsupportedmessage)
+                    .setPositiveButton(R.string.ok) { _, _ ->
+                        finish()
+                        System.exit(0) //Terminate app for good.
+                    }
+                    .setNegativeButton("I WANNA TRY"){_,_ ->
+                        progressBar!!.visibility = ProgressBar.INVISIBLE
+                        buildCamera() //At oninternetchange, we returned false and now we are here. Re-call things again.
+                        checkSignIn() // Attempts to login with async callbacks. be careful.
+                    }
+                    .show()
+            return false
+        }
+        else{
+            return true //If we survived through here, it is safe.
+        }
+    }
     private fun buildCamera(){
         // read parameters from the intent used to launch the activity.
         val autoFocus = intent.getBooleanExtra(AutoFocus, false)
