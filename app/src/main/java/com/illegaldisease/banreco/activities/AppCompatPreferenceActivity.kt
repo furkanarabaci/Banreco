@@ -1,4 +1,4 @@
-package com.illegaldisease.banreco
+package com.illegaldisease.banreco.activities
 
 import android.content.res.Configuration
 import android.os.Bundle
