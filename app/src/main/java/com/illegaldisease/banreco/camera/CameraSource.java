@@ -143,7 +143,9 @@ public class CameraSource {
     // These instances need to be held onto to avoid GC of their underlying resources.  Even though
     // these aren't used outside of the method that creates them, they still must have hard
     // references maintained to them.
+    @SuppressWarnings("FieldCanBeLocal")
     private SurfaceView mDummySurfaceView;
+    @SuppressWarnings("FieldCanBeLocal")
     private SurfaceTexture mDummySurfaceTexture;
 
     /**

@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.illegaldisease.banreco.activities
 
 import android.Manifest
@@ -8,10 +10,10 @@ import android.content.*
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.net.ConnectivityManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
+import android.hardware.Camera //Deprecated but who cares ? If i am bored, i will switch to camera2 again.
 import android.provider.CalendarContract
 import android.support.design.widget.Snackbar
 import android.support.v4.app.ActivityCompat
@@ -49,14 +51,10 @@ import com.treebo.internetavailabilitychecker.InternetConnectivityListener
 import com.wdullaer.materialdatetimepicker.date.DatePickerDialog
 import com.wdullaer.materialdatetimepicker.time.TimePickerDialog
 import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.URL
 
 import java.util.*
 
 class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,DatePickerDialog.OnDateSetListener, InternetConnectivityListener {
-
-
     companion object {
         private const val RC_SIGN_IN = 9001
         private const val TAG = "OcrCaptureActivity"
@@ -94,7 +92,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
             checkSignIn() // Attempts to login with async callbacks. be careful.
         }
         else{
-            Toast.makeText(this,"Not connected",Toast.LENGTH_LONG).show()
+            //TODO: Show some progress bar or something.
         }
 
     }
@@ -103,6 +101,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         setContentView(R.layout.activity_camera)
         InternetAvailabilityChecker.init(this)
+
         profilePic = BitmapFactory.decodeResource(this@CameraActivity.resources, R.drawable.photo1)
         profileMail = "notsignedin@placeholder.com" //Placeholder values
         profileName = "Anonymouse" //I know it is anonymous, it is intended.
@@ -114,14 +113,18 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                 .requestProfile()
                 .build()
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
+
         mPreview = findViewById(R.id.preview)
         mGraphicOverlay = findViewById(R.id.graphicOverlay)
+
+
     }
     override fun onStart() {
         super.onStart()
+        gestureDetector = GestureDetector(this, CaptureGestureListener())
         mInternetAvailabilityChecker = InternetAvailabilityChecker.getInstance()
         mInternetAvailabilityChecker!!.addInternetConnectivityListener(this)
-
+        initializeDrawerBar() //Draw a placeholder bar for offline access.
     }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -148,11 +151,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         lastEventDate!!.set(Calendar.MINUTE, minute)
         lastEventDate!!.set(Calendar.SECOND, second)
     }
-    override fun dispatchTouchEvent(e: MotionEvent?): Boolean {
-        val c = gestureDetector!!.onTouchEvent(e)
 
-        return c || super.dispatchTouchEvent(e)
-    }
     override fun onResume() {
         super.onResume()
         startCameraSource()
@@ -189,7 +188,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         Log.e(TAG, "Permission not granted: results len = " + grantResults.size +
                 " Result code = " + if (grantResults.isNotEmpty()) grantResults[0] else "(empty)")
 
-        val listener = DialogInterface.OnClickListener { dialog, id -> finish() }
+        val listener = DialogInterface.OnClickListener { _, _ -> finish() }
 
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Multitracker sample")
@@ -330,10 +329,9 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         } else {
             requestCameraPermission()
         }
-        gestureDetector = GestureDetector(this, CaptureGestureListener())
+
 
     }
-
     private fun requestCameraPermission() {
         Log.w(TAG, "Camera permission is not granted. Requesting permission")
 
@@ -355,7 +353,6 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                 .setAction(R.string.ok, listener)
                 .show()
     }
-
     private fun pickTime(){
         val tpd = TimePickerDialog.newInstance(
                 this@CameraActivity,
@@ -380,48 +377,37 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
      * Creates and starts the camera.  Note that this uses a higher resolution in comparison
      * to other detection examples to enable the ocr detector to detect small text samples
      * at long distances.
-     *
-     * Suppressing InlinedApi since there is a check that the minimum version is met before using
-     * the constant.
      */
-    @SuppressLint("InlinedApi")
     private fun createCameraSource(autoFocus: Boolean, useFlash: Boolean) {
-
         // A text recognizer is created to find text.  An associated processor instance
         // is set to receive the text recognition results and display graphics for each text block
         // on screen.
         val textRecognizer = TextRecognizer.Builder(this.applicationContext).build()
         textRecognizer.setProcessor(OcrDetectorProcessor(mGraphicOverlay))
-
         if (!textRecognizer.isOperational) {
-            // Note: The first time that an app using a Vision API is installed on a
-            // device, GMS will download a native libraries to the device in order to do detection.
-            // Usually this completes before the app is run for the first time.  But if that
-            // download has not yet completed, then the above call will not detect any text,
-            // barcodes, or faces.
-            //
-            // isOperational() can be used to check if the required native libraries are currently
-            // available.  The detectors will automatically become operational once the library
-            // downloads complete on device.
-            Log.w(TAG, "Detector dependencies are not yet available.")
-
+            /** isOperational() can be used to check if the required native libraries are currently
+             * available. The detectors will automatically become operational once the library
+             * downloads complete on device.
+            */
+            //TODO:Also call that progress bar you will implement here.
             // Check for low storage.  If there is low storage, the native library will not be
             // downloaded, so detection will not become operational.
-//            val lowstorageFilter = IntentFilter(Intent.ACTION_DEVICE_STORAGE_LOW) //TODO: Find an alternative
-//            val hasLowStorage = this.registerReceiver(null, lowstorageFilter) != null
-//
-//            if (hasLowStorage) {
-//                Toast.makeText(this, R.string.low_storage_error, Toast.LENGTH_LONG).show()
-//                Log.w(TAG, getString(R.string.low_storage_error))
-//            }
+            val lowstorageFilter = IntentFilter(Intent.ACTION_DEVICE_STORAGE_LOW) //TODO: Find an alternative
+            val hasLowStorage = this.registerReceiver(null, lowstorageFilter) != null
+            if (hasLowStorage) {
+                Toast.makeText(this, R.string.low_storage_error, Toast.LENGTH_LONG).show()
+                Log.w(TAG, getString(R.string.low_storage_error))
+            }
         }
         else{
             // Creates and starts the camera.  Note that this uses a higher resolution in comparison
             // to other detection examples to enable the text recognizer to detect small pieces of text.
-            mCameraSource = CameraSource.Builder(this, textRecognizer)
+            mCameraSource = CameraSource.Builder(applicationContext, textRecognizer)
                     .setFacing(CameraSource.CAMERA_FACING_BACK)
                     .setRequestedPreviewSize(1280, 1024)
                     .setRequestedFps(2.0f)
+                    .setFlashMode(if (useFlash) Camera.Parameters.FLASH_MODE_TORCH else null)
+                    .setFocusMode(if (autoFocus) Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE else null)
                     .build()
         }
 
@@ -429,10 +415,9 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     @SuppressLint("MissingPermission")
     private fun startCameraSource() {
         // Check that the device has play services available.
-        var code = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(
-                applicationContext)
+        val code = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(applicationContext)
         if (code != ConnectionResult.SUCCESS) {
-            var dlg = GoogleApiAvailability.getInstance().getErrorDialog(this, code, RC_HANDLE_GMS)
+            val dlg = GoogleApiAvailability.getInstance().getErrorDialog(this, code, RC_HANDLE_GMS)
             dlg.show()
         }
         if (mCameraSource != null) {
@@ -446,12 +431,12 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         }
     }
     private fun onTap(rawX : Float ,rawY : Float) : Boolean {
-        var graphic = mGraphicOverlay!!.getGraphicAtLocation(rawX, rawY)
+        val graphic = mGraphicOverlay!!.getGraphicAtLocation(rawX, rawY)
         var text : TextBlock? = null
         if (graphic != null) {
             text = graphic.textBlock
             if (text != null && text.value != null) {
-                var data = Intent()
+                val data = Intent()
                 data.putExtra(TextBlockObject, text.value)
                 setResult(CommonStatusCodes.SUCCESS, data)
                 Toast.makeText(this,text.value,Toast.LENGTH_LONG).show() //TODO: This is just for testing purposes
@@ -465,7 +450,11 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         }
         return text != null
     }
+    override fun dispatchTouchEvent(e: MotionEvent?): Boolean {
+        val c = gestureDetector!!.onTouchEvent(e)
 
+        return c || super.dispatchTouchEvent(e)
+    }
     private inner class CaptureGestureListener : GestureDetector.SimpleOnGestureListener() {
 
         override fun onSingleTapConfirmed(e: MotionEvent): Boolean {

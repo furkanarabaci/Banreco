@@ -9,9 +9,9 @@
     <string name="drawer_logs">Geçmiş Kayıtlar</string>
     <string name="drawer_about">Hakkında</string>
     <string name="drawer_rate">Puan : ★★★★★</string>
-    <string name="title_activity_logs">LogsActivity</string>
-    <string name="title_activity_events">EventsActivity</string>
-    <string name="title_activity_settings">Settings</string>
+    <string name="title_activity_logs">Geçmiş Etkinlikler</string>
+    <string name="title_activity_events">Gelecek Etkinlikler</string>
+    <string name="title_activity_settings">Ayarlar</string>
     <string name="DatabaseName">BanrecoDB</string>
 
     <string name="ok">OK</string>
