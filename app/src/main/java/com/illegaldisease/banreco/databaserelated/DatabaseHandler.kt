@@ -24,6 +24,7 @@ class DatabaseHandler(ctx: Context) : ManagedSQLiteOpenHelper(ctx, EventModel.da
                 EventModel.idColumn to INTEGER + PRIMARY_KEY + UNIQUE,
                 EventModel.dateColumn to INTEGER,
                 EventModel.imageColumn to BLOB)
+
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
