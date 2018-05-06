@@ -42,8 +42,8 @@ import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.gms.vision.text.TextBlock
 import com.google.android.gms.vision.text.TextRecognizer
-import com.illegaldisease.banreco.OcrDetectorProcessor
-import com.illegaldisease.banreco.OcrGraphic
+import com.illegaldisease.banreco.ocrstuff.OcrDetectorProcessor
+import com.illegaldisease.banreco.ocrstuff.OcrGraphic
 import com.illegaldisease.banreco.R
 import com.illegaldisease.banreco.UnsupportedDevices
 import com.illegaldisease.banreco.camera.CameraSource
@@ -103,6 +103,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
             progressBar!!.visibility = ProgressBar.VISIBLE
         }
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
@@ -134,6 +135,24 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         mInternetAvailabilityChecker!!.addInternetConnectivityListener(this)
         initializeDrawerBar() //Draw a placeholder bar for offline access.
     }
+    override fun onResume() {
+        super.onResume()
+        startCameraSource()
+    }
+    override fun onPause() {
+        super.onPause()
+        if (mPreview != null) {
+            mPreview!!.stop()
+        }
+    }
+    override fun onDestroy() {
+        super.onDestroy()
+        mInternetAvailabilityChecker!!.removeInternetConnectivityChangeListener(this)
+        if (mPreview != null) {
+            mPreview!!.release()
+        }
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if(requestCode == RC_SIGN_IN){
@@ -158,24 +177,6 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         lastEventDate!!.set(Calendar.HOUR_OF_DAY, hourOfDay)
         lastEventDate!!.set(Calendar.MINUTE, minute)
         lastEventDate!!.set(Calendar.SECOND, second)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        startCameraSource()
-    }
-    override fun onPause() {
-        super.onPause()
-        if (mPreview != null) {
-            mPreview!!.stop()
-        }
-    }
-    override fun onDestroy() {
-        super.onDestroy()
-        mInternetAvailabilityChecker!!.removeInternetConnectivityChangeListener(this)
-        if (mPreview != null) {
-            mPreview!!.release()
-        }
     }
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         if (requestCode != RC_HANDLE_CAMERA_PERM) {
@@ -444,15 +445,16 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         dpd.version = DatePickerDialog.Version.VERSION_2
     }
 
-    /**
-     * Creates and starts the camera.  Note that this uses a higher resolution in comparison
-     * to other detection examples to enable the ocr detector to detect small text samples
-     * at long distances.
-     */
     private fun createCameraSource(autoFocus: Boolean, useFlash: Boolean) {
-        // A text recognizer is created to find text.  An associated processor instance
-        // is set to receive the text recognition results and display graphics for each text block
-        // on screen.
+        /**
+         * Creates and starts the camera.  Note that this uses a higher resolution in comparison
+         * to other detection examples to enable the ocr detector to detect small text samples
+         * at long distances.
+         *
+         * A text recognizer is created to find text.  An associated processor instance
+         * is set to receive the text recognition results and display graphics for each text block
+         * on screen.
+         */
         val textRecognizer = TextRecognizer.Builder(this.applicationContext).build()
         textRecognizer.setProcessor(OcrDetectorProcessor(mGraphicOverlay))
         if (!textRecognizer.isOperational) {
@@ -511,7 +513,6 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                 val data = Intent()
                 data.putExtra(TextBlockObject, text.value)
                 setResult(CommonStatusCodes.SUCCESS, data)
-                Toast.makeText(this,text.value,Toast.LENGTH_LONG).show() //TODO: This is just for testing purposes
             }
             else {
                 Log.d(TAG, "text d ata is null")

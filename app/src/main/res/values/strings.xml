@@ -12,7 +12,7 @@
     <string name="title_activity_logs">Geçmiş Etkinlikler</string>
     <string name="title_activity_events">Gelecek Etkinlikler</string>
     <string name="title_activity_settings">Ayarlar</string>
-    <string name="DatabaseName">BanrecoDB</string>
+
 
     <string name="ok">OK</string>
     <string name="permission_camera_rationale">Access to the camera is needed for detection</string>
