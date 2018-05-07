@@ -16,6 +16,7 @@ import android.graphics.drawable.Drawable
 import android.hardware.Camera //Deprecated but who cares ? If i am bored, i will switch to camera2 again.
 import android.net.Uri
 import android.provider.CalendarContract
+import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.Snackbar
 import android.support.v4.app.ActivityCompat
 import android.util.Log
@@ -79,6 +80,9 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
 
     private var alertDialog : AlertDialog? = null
     private var progressBar : ProgressBar? = null
+    private var photoButton : FloatingActionButton ?= null
+    private var flashButton : FloatingActionButton ?= null
+    private var isFlashOn : Boolean ?= false //One boolean value will not hurt. This will be obsolete if flash is not supported.
 
     // Helper objects for detecting taps and pinches.
     private var gestureDetector: GestureDetector? = null
@@ -91,7 +95,6 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     private var lastEventDate : Calendar? = null
 
     private var mInternetAvailabilityChecker : InternetAvailabilityChecker? = null
-
     override fun onInternetConnectivityChanged(isConnected: Boolean) {
         if(isConnected && isSupported()){
             progressBar!!.visibility = ProgressBar.INVISIBLE
@@ -109,10 +112,14 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         setContentView(R.layout.activity_camera)
         InternetAvailabilityChecker.init(this)
+
         profilePic = BitmapFactory.decodeResource(this@CameraActivity.resources, R.drawable.photo1)
         profileMail = "notsignedin@placeholder.com" //Placeholder values
         profileName = "Anonymouse" //I know it is anonymous, it is intended.
         lastEventDate = GregorianCalendar.getInstance(TimeZone.getDefault()) //Don't forget to re-initialize
+
+        photoButton = findViewById(R.id.fab_take_photo)
+        photoButton!!.setOnClickListener {  }
 
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
@@ -126,14 +133,13 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
 
         progressBar = findViewById(R.id.indeterminateBar)
         createAlertDialog() //Only creates, does not show it.
-
     }
     override fun onStart() {
         super.onStart()
         gestureDetector = GestureDetector(this, CaptureGestureListener())
         mInternetAvailabilityChecker = InternetAvailabilityChecker.getInstance()
         mInternetAvailabilityChecker!!.addInternetConnectivityListener(this)
-        initializeDrawerBar() //Draw a placeholder bar for offline access.
+        initializeDrawerBar()
     }
     override fun onResume() {
         super.onResume()
@@ -187,7 +193,6 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
 
         if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             Log.d(TAG, "Camera permission granted - initialize the camera source")
-            // We have permission, so create the camerasource
             val autoFocus = this.intent.getBooleanExtra(AutoFocus, false)
             val useFlash = this.intent.getBooleanExtra(UseFlash, false)
             createCameraSource(autoFocus, useFlash)
@@ -206,6 +211,36 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                 .show()
     }
 
+    //TODO: Implement focus mode thingy too.
+    private fun initializeFlashButton(){
+        if(mCameraSource!!.flashMode != null){
+            flashButton = findViewById(R.id.fab_flash) //These two is hidden at the beginning.
+            flashButton!!.setOnClickListener{
+                isFlashOn = isFlashOn!!.not() //Just for better readability.
+                if(isFlashOn as Boolean){
+                    mCameraSource!!.flashMode = Camera.Parameters.FLASH_MODE_TORCH
+                    flashButton!!.setImageResource(R.drawable.ic_flash_off_white_24px)
+                }
+                else{
+                    mCameraSource!!.flashMode = Camera.Parameters.FLASH_MODE_OFF
+                    flashButton!!.setImageResource(R.drawable.ic_flash_on_white_24px)
+                }
+            }
+        }
+        else{
+            //Flash is not supported. Do not even bother creating flash button. Just be aware of nulls.
+        }
+    }
+    private fun toggleButtonVisibility(newVisibility : Boolean){
+        if(!newVisibility){
+            flashButton?.hide()
+            photoButton!!.hide()
+        }
+        else{
+            flashButton?.show()
+            photoButton!!.show()
+        }
+    }
     private fun createAlertDialog(){
 //      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
         val alertBuilder: AlertDialog.Builder = AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
@@ -310,6 +345,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         val intent = Intent(Intent.ACTION_VIEW).setData(builder.build())
         startActivity(intent)
     }
+
     private fun checkSignIn(){
         val task = mGoogleSignInClient!!.silentSignIn()
         if (task.isSuccessful) {
@@ -390,9 +426,8 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     }
     private fun buildCamera(){
         // read parameters from the intent used to launch the activity.
-        val autoFocus = intent.getBooleanExtra(AutoFocus, false)
-        val useFlash = intent.getBooleanExtra(UseFlash, false)
-
+        val autoFocus = intent.getBooleanExtra(AutoFocus, true)
+        val useFlash = intent.getBooleanExtra(UseFlash, isFlashOn!!)
         // Check for the camera permission before accessing the camera.  If the
         // permission is not granted yet, request permission.
         val rc = ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
@@ -483,6 +518,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                     .setFlashMode(if (useFlash) Camera.Parameters.FLASH_MODE_TORCH else null)
                     .setFocusMode(if (autoFocus) Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE else null)
                     .build()
+            initializeFlashButton()
         }
 
     }
@@ -497,6 +533,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         if (mCameraSource != null) {
             try {
                 mPreview!!.start(mCameraSource, mGraphicOverlay)
+                toggleButtonVisibility(true)
             } catch (e : IOException) {
                 Log.e(TAG, "Unable to start camera source.", e)
                 mCameraSource!!.release()

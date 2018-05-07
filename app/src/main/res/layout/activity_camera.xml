@@ -26,19 +26,20 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="34dp"
         android:src="@drawable/ic_camera"
+        android:visibility="invisible"
         app:fabSize="normal" />
 
     <android.support.design.widget.FloatingActionButton
-        android:id="@+id/fab_activate_flash"
+        android:id="@+id/fab_flash"
         style="@style/fab"
         android:layout_width="56dp"
         android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/fab_take_photo"
+        android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
-        android:layout_marginEnd="32dp"
+        android:layout_marginEnd="18dp"
         android:src="@drawable/ic_flash_on_white_24px"
+        android:visibility="invisible"
         app:fabSize="normal" />
 
     <ProgressBar
