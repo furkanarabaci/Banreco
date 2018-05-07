@@ -371,7 +371,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
             //Well, end of the line. sorry. Device is not supported by Vision API. Warn user.
             val alertBuilder: AlertDialog.Builder = AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
             alertBuilder.setTitle(R.string.devicenotsupportedtitle)
-                    .setMessage(R.string.devicenotsupportedmessage)
+                    .setMessage("Your device : $deviceName" + R.string.devicenotsupportedmessage)
                     .setPositiveButton(R.string.ok) { _, _ ->
                         finish()
                         System.exit(0) //Terminate app for good.

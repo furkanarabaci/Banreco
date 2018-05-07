@@ -1,5 +1,6 @@
 package com.illegaldisease.banreco.liststuff
 
+import android.content.Context
 import android.support.design.widget.FloatingActionButton
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
@@ -13,7 +14,7 @@ import com.illegaldisease.banreco.databaserelated.EventsRemastered
 
 import com.illegaldisease.banreco.liststuff.ItemFragment.OnListFragmentInteractionListener
 
-class RecyclerViewAdapter(private val eventHandler : EventHandler, private val mValues: MutableList<EventsRemastered>, private val mListener: OnListFragmentInteractionListener?)
+class RecyclerViewAdapter(private val context : Context, private val mValues: MutableList<EventsRemastered>, private val mListener: OnListFragmentInteractionListener?)
     : RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder>() {
     private val mOnClickListener: View.OnClickListener
     private var fab : FloatingActionButton? = null
@@ -27,7 +28,6 @@ class RecyclerViewAdapter(private val eventHandler : EventHandler, private val m
         }
 
     }
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.fragment_list, parent, false)
         fab = view.findViewById(R.id.fragmentfloatingActionButton)
@@ -42,7 +42,7 @@ class RecyclerViewAdapter(private val eventHandler : EventHandler, private val m
             setOnClickListener(mOnClickListener)
         }
         fab!!.setOnClickListener {
-            eventHandler.deleteEvent(item)
+            EventHandler.deleteEvent(context, item)
             this.notifyDataSetChanged()
         }
     }

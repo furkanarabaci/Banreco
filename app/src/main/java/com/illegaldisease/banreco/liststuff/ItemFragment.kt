@@ -31,7 +31,7 @@ class ItemFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        eventHandler = EventHandler(context!!) //It should be starting to fetch data from database.
+        EventHandler.fillOutTables(context!!) //TODO: One of culprit of your async task.
         arguments?.let {
             columnCount = it.getInt(ARG_COLUMN_COUNT)
         }
@@ -51,9 +51,9 @@ class ItemFragment : Fragment() {
                 }
                 if(activity != null){ //Check if we are attached to an activity.
                     adapter = if(activity!!.localClassName == "activities.EventsActivity"){
-                        com.illegaldisease.banreco.liststuff.RecyclerViewAdapter(eventHandler!!,com.illegaldisease.banreco.databaserelated.EventHandler.futureEvents, context as OnListFragmentInteractionListener)
+                        com.illegaldisease.banreco.liststuff.RecyclerViewAdapter(context, EventHandler.futureEvents, context as OnListFragmentInteractionListener)
                     } else{
-                        com.illegaldisease.banreco.liststuff.RecyclerViewAdapter(eventHandler!!,com.illegaldisease.banreco.databaserelated.EventHandler.pastEvents, context as OnListFragmentInteractionListener)
+                        com.illegaldisease.banreco.liststuff.RecyclerViewAdapter(context, EventHandler.pastEvents, context as OnListFragmentInteractionListener)
                     }
                     adapter.notifyDataSetChanged()
                 }
