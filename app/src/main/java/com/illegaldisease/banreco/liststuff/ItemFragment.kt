@@ -2,6 +2,7 @@ package com.illegaldisease.banreco.liststuff
 
 import android.content.Context
 import android.os.Bundle
+import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.Fragment
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.LinearLayoutManager
@@ -27,6 +28,7 @@ class ItemFragment : Fragment() {
 
     private var listener : OnListFragmentInteractionListener? = null
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         eventHandler = EventHandler(context!!) //It should be starting to fetch data from database.
@@ -49,10 +51,11 @@ class ItemFragment : Fragment() {
                 }
                 if(activity != null){ //Check if we are attached to an activity.
                     adapter = if(activity!!.localClassName == "activities.EventsActivity"){
-                        com.illegaldisease.banreco.liststuff.RecyclerViewAdapter(com.illegaldisease.banreco.databaserelated.EventHandler.futureEvents, context as OnListFragmentInteractionListener)
+                        com.illegaldisease.banreco.liststuff.RecyclerViewAdapter(eventHandler!!,com.illegaldisease.banreco.databaserelated.EventHandler.futureEvents, context as OnListFragmentInteractionListener)
                     } else{
-                        com.illegaldisease.banreco.liststuff.RecyclerViewAdapter(com.illegaldisease.banreco.databaserelated.EventHandler.pastEvents, context as OnListFragmentInteractionListener)
+                        com.illegaldisease.banreco.liststuff.RecyclerViewAdapter(eventHandler!!,com.illegaldisease.banreco.databaserelated.EventHandler.pastEvents, context as OnListFragmentInteractionListener)
                     }
+                    adapter.notifyDataSetChanged()
                 }
             }
         }

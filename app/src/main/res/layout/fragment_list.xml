@@ -11,6 +11,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="2"
+        android:layout_marginLeft="10dp"
         android:contentDescription="@string/app_name" />
 
     <TextView
@@ -23,7 +24,7 @@
         android:textSize="20sp" />
 
     <android.support.design.widget.FloatingActionButton
-        android:id="@+id/floatingActionButton"
+        android:id="@+id/fragmentfloatingActionButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
