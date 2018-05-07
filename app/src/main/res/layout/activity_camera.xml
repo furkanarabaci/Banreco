@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -20,12 +21,25 @@
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab_take_photo"
+        style="@style/fab"
         android:layout_width="56dp"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="49dp"
-        android:src="@drawable/ic_camera" />
+        android:layout_marginBottom="34dp"
+        android:src="@drawable/ic_camera"
+        app:fabSize="normal" />
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/fab_activate_flash"
+        style="@style/fab"
+        android:layout_width="56dp"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/fab_take_photo"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="32dp"
+        android:src="@drawable/ic_flash_on_white_24px"
+        app:fabSize="normal" />
 
     <ProgressBar
         android:id="@+id/indeterminateBar"
