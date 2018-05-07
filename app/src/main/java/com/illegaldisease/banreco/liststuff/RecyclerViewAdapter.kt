@@ -17,7 +17,7 @@ class RecyclerViewAdapter(private val mValues: MutableList<EventsRemastered>, pr
 
     init {
         mOnClickListener = View.OnClickListener { v ->
-            val item = v.tag as EventsRemastered
+            val item = v.tag as? EventsRemastered
             // Notify the active callbacks interface (the activity, if the fragment is attached to
             // one) that an item has been selected.
             mListener?.onListFragmentInteraction(item)
@@ -25,8 +25,7 @@ class RecyclerViewAdapter(private val mValues: MutableList<EventsRemastered>, pr
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(parent.context)
-                .inflate(R.layout.fragment_list, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.fragment_list, parent, false)
         return ViewHolder(view)
     }
 

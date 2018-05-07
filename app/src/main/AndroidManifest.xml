@@ -27,7 +27,7 @@
         <activity
             android:name=".activities.LogsActivity"
             android:label="@string/title_activity_logs"
-            android:theme="@style/AppTheme" />
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
         <activity
             android:name=".activities.EventsActivity"
             android:label="@string/title_activity_events"

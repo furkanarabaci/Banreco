@@ -9,6 +9,7 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import com.illegaldisease.banreco.R
 import com.illegaldisease.banreco.databaserelated.*
 
@@ -47,7 +48,7 @@ class ItemFragment : Fragment() {
                     else -> android.support.v7.widget.GridLayoutManager(context, columnCount)
                 }
                 if(activity != null){ //Check if we are attached to an activity.
-                    adapter = if(activity!!.localClassName == "EventsActivity"){
+                    adapter = if(activity!!.localClassName == "activities.EventsActivity"){
                         com.illegaldisease.banreco.liststuff.RecyclerViewAdapter(com.illegaldisease.banreco.databaserelated.EventHandler.futureEvents, context as OnListFragmentInteractionListener)
                     } else{
                         com.illegaldisease.banreco.liststuff.RecyclerViewAdapter(com.illegaldisease.banreco.databaserelated.EventHandler.pastEvents, context as OnListFragmentInteractionListener)
