@@ -83,6 +83,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     private var photoButton : FloatingActionButton ?= null
     private var flashButton : FloatingActionButton ?= null
     private var isFlashOn : Boolean ?= false //One boolean value will not hurt. This will be obsolete if flash is not supported.
+    private var isAutoFocusOn : Boolean ?= false //TODO: Implement.
 
     // Helper objects for detecting taps and pinches.
     private var gestureDetector: GestureDetector? = null
@@ -193,9 +194,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
 
         if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             Log.d(TAG, "Camera permission granted - initialize the camera source")
-            val autoFocus = this.intent.getBooleanExtra(AutoFocus, false)
-            val useFlash = this.intent.getBooleanExtra(UseFlash, false)
-            createCameraSource(autoFocus, useFlash)
+            buildCamera()
             return
         }
 
@@ -220,10 +219,12 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                 if(isFlashOn as Boolean){
                     mCameraSource!!.flashMode = Camera.Parameters.FLASH_MODE_TORCH
                     flashButton!!.setImageResource(R.drawable.ic_flash_off_white_24px)
+                    restartCameraSource()
                 }
                 else{
                     mCameraSource!!.flashMode = Camera.Parameters.FLASH_MODE_OFF
                     flashButton!!.setImageResource(R.drawable.ic_flash_on_white_24px)
+                    restartCameraSource()
                 }
             }
         }
@@ -335,8 +336,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                 }
             }
         }
-        mPreview!!.stop() //There is a bug going on. When you draw the material bar, camera goes black.
-        startCameraSource() //So i am redrawing camera.
+        restartCameraSource() //There is some mysterious bug about drawer, so i restart every time.
     }
     private fun openCalendar(openTime : Long){
         val builder = CalendarContract.CONTENT_URI.buildUpon()
@@ -424,20 +424,17 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
             return true //If we survived through here, it is safe.
         }
     }
+
     private fun buildCamera(){
         // read parameters from the intent used to launch the activity.
-        val autoFocus = intent.getBooleanExtra(AutoFocus, true)
-        val useFlash = intent.getBooleanExtra(UseFlash, isFlashOn!!)
         // Check for the camera permission before accessing the camera.  If the
         // permission is not granted yet, request permission.
         val rc = ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
         if (rc == PackageManager.PERMISSION_GRANTED) {
-            createCameraSource(autoFocus, useFlash)
+            createCameraSource()
         } else {
             requestCameraPermission()
         }
-
-
     }
     private fun requestCameraPermission() {
         Log.w(TAG, "Camera permission is not granted. Requesting permission")
@@ -460,27 +457,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                 .setAction(R.string.ok, listener)
                 .show()
     }
-    private fun pickTime(){
-        val tpd = TimePickerDialog.newInstance(
-                this@CameraActivity,
-                true
-        )
-        tpd.show(fragmentManager,"TimePicker")
-        tpd.version = TimePickerDialog.Version.VERSION_2
-    }
-    private fun pickDate(){
-        val now = Calendar.getInstance()
-        val dpd = DatePickerDialog.newInstance(
-                this@CameraActivity,
-                now.get(Calendar.YEAR),
-                now.get(Calendar.MONTH),
-                now.get(Calendar.DAY_OF_MONTH)
-        )
-        dpd.show(fragmentManager, "DatePicker")
-        dpd.version = DatePickerDialog.Version.VERSION_2
-    }
-
-    private fun createCameraSource(autoFocus: Boolean, useFlash: Boolean) {
+    private fun createCameraSource() {
         /**
          * Creates and starts the camera.  Note that this uses a higher resolution in comparison
          * to other detection examples to enable the ocr detector to detect small text samples
@@ -496,7 +473,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
             /** isOperational() can be used to check if the required native libraries are currently
              * available. The detectors will automatically become operational once the library
              * downloads complete on device.
-            */
+             */
             alertDialog!!.show() //Always try to show it.
             // Check for low storage.  If there is low storage, the native library will not be
             // downloaded, so detection will not become operational.
@@ -515,8 +492,8 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                     .setFacing(CameraSource.CAMERA_FACING_BACK)
                     .setRequestedPreviewSize(1280, 1024)
                     .setRequestedFps(2.0f)
-                    .setFlashMode(if (useFlash) Camera.Parameters.FLASH_MODE_TORCH else null)
-                    .setFocusMode(if (autoFocus) Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE else null)
+                    .setFlashMode(if (isFlashOn!!) Camera.Parameters.FLASH_MODE_TORCH else null)
+                    .setFocusMode(if (isAutoFocusOn!!) Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE else null)
                     .build()
             initializeFlashButton()
         }
@@ -541,6 +518,32 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
             }
         }
     }
+    private fun restartCameraSource() {
+        mPreview!!.stop()
+        buildCamera()
+        startCameraSource()
+    }
+
+    private fun pickTime(){
+        val tpd = TimePickerDialog.newInstance(
+                this@CameraActivity,
+                true
+        )
+        tpd.show(fragmentManager,"TimePicker")
+        tpd.version = TimePickerDialog.Version.VERSION_2
+    }
+    private fun pickDate(){
+        val now = Calendar.getInstance()
+        val dpd = DatePickerDialog.newInstance(
+                this@CameraActivity,
+                now.get(Calendar.YEAR),
+                now.get(Calendar.MONTH),
+                now.get(Calendar.DAY_OF_MONTH)
+        )
+        dpd.show(fragmentManager, "DatePicker")
+        dpd.version = DatePickerDialog.Version.VERSION_2
+    }
+
     private fun onTap(rawX : Float ,rawY : Float) : Boolean {
         val graphic = mGraphicOverlay!!.getGraphicAtLocation(rawX, rawY)
         var text : TextBlock? = null
