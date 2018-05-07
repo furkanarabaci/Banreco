@@ -10,7 +10,6 @@ class UnsupportedDevices {
         deviceWithDisabledTextCheck!!.add("herolte")
         deviceWithDisabledTextCheck!!.add("j7xelte")
         deviceWithDisabledTextCheck!!.add("zerolte")
-        deviceWithDisabledTextCheck!!.add("on7xelte")
         deviceWithDisabledTextCheck!!.add("a5xelte")
         deviceWithDisabledTextCheck!!.add("a3xelte")
         deviceWithDisabledTextCheck!!.add("j7e3g")

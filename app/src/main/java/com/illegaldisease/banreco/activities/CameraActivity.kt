@@ -82,8 +82,8 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     private var progressBar : ProgressBar? = null
     private var photoButton : FloatingActionButton ?= null
     private var flashButton : FloatingActionButton ?= null
-    private var isFlashOn : Boolean ?= false //One boolean value will not hurt. This will be obsolete if flash is not supported.
-    private var isAutoFocusOn : Boolean ?= false //TODO: Implement.
+    private var isFlashOn : Boolean ?= null //One boolean value will not hurt. This will be obsolete if flash is not supported.
+    private var isAutoFocusOn : Boolean ?= null //TODO: Implement.
 
     // Helper objects for detecting taps and pinches.
     private var gestureDetector: GestureDetector? = null
@@ -119,8 +119,12 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         profileName = "Anonymouse" //I know it is anonymous, it is intended.
         lastEventDate = GregorianCalendar.getInstance(TimeZone.getDefault()) //Don't forget to re-initialize
 
+        isFlashOn = false
+        isAutoFocusOn = false
+
         photoButton = findViewById(R.id.fab_take_photo)
         photoButton!!.setOnClickListener {  }
+        initializeFlashButton()
 
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
@@ -210,13 +214,18 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                 .show()
     }
 
-    //TODO: Implement focus mode thingy too.
+    private fun checkAutoFocus(){
+        if(packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_AUTOFOCUS)) {
+            isAutoFocusOn = true //It might be left as is forever.
+        }
+    }
     private fun initializeFlashButton(){
-        if(mCameraSource!!.flashMode != null){
+        if(packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)){
             flashButton = findViewById(R.id.fab_flash) //These two is hidden at the beginning.
+            toggleButtonVisibility(true)
             flashButton!!.setOnClickListener{
                 isFlashOn = isFlashOn!!.not() //Just for better readability.
-                if(isFlashOn as Boolean){
+                if(isFlashOn!!){
                     mCameraSource!!.flashMode = Camera.Parameters.FLASH_MODE_TORCH
                     flashButton!!.setImageResource(R.drawable.ic_flash_off_white_24px)
                     restartCameraSource()
@@ -495,7 +504,6 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                     .setFlashMode(if (isFlashOn!!) Camera.Parameters.FLASH_MODE_TORCH else null)
                     .setFocusMode(if (isAutoFocusOn!!) Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE else null)
                     .build()
-            initializeFlashButton()
         }
 
     }
@@ -509,6 +517,8 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         }
         if (mCameraSource != null) {
             try {
+
+                checkAutoFocus() //And enable it if it is supported.
                 mPreview!!.start(mCameraSource, mGraphicOverlay)
                 toggleButtonVisibility(true)
             } catch (e : IOException) {
