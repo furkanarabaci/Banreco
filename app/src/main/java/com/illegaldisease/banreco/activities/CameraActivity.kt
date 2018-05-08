@@ -12,11 +12,13 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.graphics.drawable.Drawable
 import android.hardware.Camera //Deprecated but who cares ? If i am bored, i will switch to camera2 again.
 import android.net.Uri
 import android.os.Build
 import android.provider.CalendarContract
+import android.provider.MediaStore
 import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.Snackbar
 import android.support.v4.app.ActivityCompat
@@ -50,10 +52,16 @@ import com.illegaldisease.banreco.R
 import com.illegaldisease.banreco.camera.CameraSource
 import com.illegaldisease.banreco.camera.CameraSourcePreview
 import com.illegaldisease.banreco.camera.GraphicOverlay
+import com.illegaldisease.banreco.databaserelated.DatabaseHandler
+import com.illegaldisease.banreco.databaserelated.EventHandler
+import com.illegaldisease.banreco.databaserelated.EventModel
 import com.treebo.internetavailabilitychecker.InternetAvailabilityChecker
 import com.treebo.internetavailabilitychecker.InternetConnectivityListener
 import com.wdullaer.materialdatetimepicker.date.DatePickerDialog
 import com.wdullaer.materialdatetimepicker.time.TimePickerDialog
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 
 import java.util.*
@@ -120,7 +128,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         isAutoFocusOn = false
 
         photoButton = findViewById(R.id.fab_take_photo)
-        photoButton!!.setOnClickListener {  }
+        photoButton!!.setOnClickListener { takePicture() }
         initializeFlashButton()
 
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -497,6 +505,38 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         mPreview!!.stop()
         buildCamera()
         startCameraSource()
+    }
+    private fun takePicture(){
+        mCameraSource!!.takePicture(null, CameraSource.PictureCallback {
+            val imageFile : File
+                try {
+                    // convert byte array into bitmap
+                    val loadedImage : Bitmap = BitmapFactory.decodeByteArray(it, 0, it.size)
+                    val rotateMatrix = Matrix()
+                    rotateMatrix.postRotate(0f)
+                    val rotatedBitmap = Bitmap.createBitmap(loadedImage, 0, 0,
+                            loadedImage.width, loadedImage.height,
+                            rotateMatrix, false)
+                    val filePath = File(filesDir.toURI())
+                    val date = System.currentTimeMillis() / 1000 //TODO:Test purposes. Change it later.
+                    //val date = lastEventDate!!.timeInMillis / 1000
+                    imageFile = File(filePath.absolutePath
+                            + File.separator
+                            + date
+                            + ".jpeg")
+                    imageFile.createNewFile()
+                    val ostream = ByteArrayOutputStream()
+                    // save image into gallery
+                    rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, ostream)
+                    FileOutputStream(imageFile).apply {
+                        write(ostream.toByteArray())
+                        close()
+                    }
+                    EventHandler.addEvent(this, EventModel(0,date.toInt()))
+                } catch (e : Exception) {
+                    e.printStackTrace()
+                }
+        })
     }
 
     private fun pickTime(){

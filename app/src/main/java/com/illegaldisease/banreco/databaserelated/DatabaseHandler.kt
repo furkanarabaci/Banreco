@@ -22,8 +22,7 @@ class DatabaseHandler(ctx: Context) : ManagedSQLiteOpenHelper(ctx, EventModel.da
         // Here you create tables
         db.createTable(EventModel.tableName, true,
                 EventModel.idColumn to INTEGER + PRIMARY_KEY + UNIQUE,
-                EventModel.dateColumn to INTEGER,
-                EventModel.imageColumn to TEXT)
+                EventModel.dateColumn to INTEGER)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {

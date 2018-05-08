@@ -48,11 +48,10 @@ class ItemFragment : Fragment() {
                 }
                 if(activity != null){ //Check if we are attached to an activity.
                     adapter = if(activity!!.localClassName == "activities.EventsActivity"){
-                        com.illegaldisease.banreco.liststuff.RecyclerViewAdapter(context, EventHandler.futureEvents, context as OnListFragmentInteractionListener)
+                        RecyclerViewAdapter(context, EventHandler.futureEvents, context as OnListFragmentInteractionListener)
                     } else{
-                        com.illegaldisease.banreco.liststuff.RecyclerViewAdapter(context, EventHandler.pastEvents, context as OnListFragmentInteractionListener)
+                        RecyclerViewAdapter(context, EventHandler.pastEvents, context as OnListFragmentInteractionListener)
                     }
-                    adapter.notifyDataSetChanged()
                 }
             }
         }

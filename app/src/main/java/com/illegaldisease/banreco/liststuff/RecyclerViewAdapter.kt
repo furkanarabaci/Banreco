@@ -14,7 +14,7 @@ import com.illegaldisease.banreco.databaserelated.EventsRemastered
 
 import com.illegaldisease.banreco.liststuff.ItemFragment.OnListFragmentInteractionListener
 
-class RecyclerViewAdapter(private val context : Context, private val mValues: MutableList<EventsRemastered>, private val mListener: OnListFragmentInteractionListener?)
+class RecyclerViewAdapter(private val context : Context, private var mValues: MutableList<EventsRemastered>, private val mListener: OnListFragmentInteractionListener?)
     : RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder>() {
     private val mOnClickListener: View.OnClickListener
     private var fab : FloatingActionButton? = null
@@ -42,8 +42,14 @@ class RecyclerViewAdapter(private val context : Context, private val mValues: Mu
             setOnClickListener(mOnClickListener)
         }
         fab!!.setOnClickListener {
-            EventHandler.deleteEvent(context, item)
-            this.notifyDataSetChanged()
+            try {
+                EventHandler.deleteEvent(context, item) //Deletes from database and original static list.
+            }
+            catch (e : Exception){
+                mValues.remove(item) //Deletes from current adapter.
+            }
+            notifyItemRemoved(position)
+            notifyItemRangeChanged(position, itemCount)
         }
     }
     override fun getItemCount(): Int = mValues.size
