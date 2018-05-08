@@ -3,6 +3,7 @@ package com.illegaldisease.banreco.liststuff
 import android.content.Context
 import android.support.design.widget.FloatingActionButton
 import android.support.v7.widget.RecyclerView
+import android.text.format.DateFormat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,6 +14,7 @@ import com.illegaldisease.banreco.databaserelated.EventHandler
 import com.illegaldisease.banreco.databaserelated.EventsRemastered
 
 import com.illegaldisease.banreco.liststuff.ItemFragment.OnListFragmentInteractionListener
+import java.util.*
 
 class RecyclerViewAdapter(private val context : Context, private var mValues: MutableList<EventsRemastered>, private val mListener: OnListFragmentInteractionListener?)
     : RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder>() {
@@ -38,7 +40,7 @@ class RecyclerViewAdapter(private val context : Context, private var mValues: Mu
         val item = mValues[position]
         with(holder.mView) {
             holder.eventImage!!.setImageBitmap(item.photo)
-            holder.eventDate!!.text = item.date
+            holder.eventDate!!.text = convertTimestampToString(item.date)
             setOnClickListener(mOnClickListener)
         }
         fab!!.setOnClickListener {
@@ -61,5 +63,10 @@ class RecyclerViewAdapter(private val context : Context, private var mValues: Mu
             eventDate = mView.findViewById(R.id.listDate)
             eventImage = mView.findViewById(R.id.listImage)
         }
+    }
+    private fun convertTimestampToString(timestamp : Int) : String {
+        val calendar = Calendar.getInstance(Locale.ENGLISH)
+        calendar.timeInMillis = timestamp.toLong() * 1000
+        return DateFormat.format("dd-MM-yyyy HH:mm",calendar).toString()
     }
 }

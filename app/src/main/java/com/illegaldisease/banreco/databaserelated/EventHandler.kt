@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.MediaStore
 import android.text.format.DateFormat
+import android.util.Log
 import org.jetbrains.anko.db.parseList
 import org.jetbrains.anko.db.rowParser
 import org.jetbrains.anko.db.select
@@ -19,8 +20,10 @@ import kotlin.collections.ArrayList
 import com.illegaldisease.banreco.R
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
+import java.io.FileNotFoundException
 import java.io.IOException
 import java.net.URI
+import java.text.SimpleDateFormat
 
 
 class EventHandler { //Don't construct this object more than once. PLEASE.
@@ -31,16 +34,15 @@ class EventHandler { //Don't construct this object more than once. PLEASE.
         private fun addEventToLists(context: Context, currentModel : EventModel){
             //This function will separate entries using current date ( past or future ) and place it to Lists.
             doAsync {
-                val thisDate = convertTimestampToString(currentModel.date)
                 val thisPhoto = convertToBitmap(context, currentModel.date.toString())
                 uiThread {
                     if(System.currentTimeMillis()/1000 >= currentModel.date){
                         //Why would i compare two calendars, when i have timestamps already ???
                         //Here is past events.
-                        pastEvents.add(EventsRemastered(currentModel.id, thisDate,thisPhoto))
+                        pastEvents.add(EventsRemastered(currentModel.id, currentModel.date,thisPhoto))
                     }
                     else{
-                        futureEvents.add(EventsRemastered(currentModel.id, thisDate,thisPhoto))
+                        futureEvents.add(EventsRemastered(currentModel.id, currentModel.date,thisPhoto))
                     }
                 }
             }
@@ -68,7 +70,7 @@ class EventHandler { //Don't construct this object more than once. PLEASE.
                 }
             }
         }
-        @Throws(SQLiteException::class)
+        @Throws(Exception::class)
         fun deleteEvent(context : Context,  eventToDelete : EventsRemastered){
             //Deletes from database and relevant list as well. Don't forget to check already nonexistent data.
             //Future or past, they belong at the same table.
@@ -82,7 +84,6 @@ class EventHandler { //Don't construct this object more than once. PLEASE.
                     throw SQLException("Could not delete from database.")
                 }
                 else{
-                    //TODO: Also clear it from the files folder.
                     if(futureEvents.contains(eventToDelete)){
                         if(futureEvents.size == 1){
                             futureEvents.clear() //It seems like kotlin does not clear when there is a single element left.
@@ -91,7 +92,7 @@ class EventHandler { //Don't construct this object more than once. PLEASE.
                             futureEvents.remove(eventToDelete)
                         }
                     }
-                    else{
+                    else {
                         //If it is not on future, it is probably belong to the past.
                         if(pastEvents.size == 1){
                             pastEvents.clear()
@@ -100,7 +101,15 @@ class EventHandler { //Don't construct this object more than once. PLEASE.
                             pastEvents.remove(eventToDelete)
                         }
                     }
-
+                    //Probably not a good place, but i will refactor later if i get an error because of this.
+                    val fileToDelete = File(parsePhotoUri(eventToDelete.date.toString(),context.filesDir))
+                    //I think this is too complex, but it just tries to find a file.
+                    if(fileToDelete.exists()){
+                        fileToDelete.delete()
+                    }
+                    else{
+                        throw FileNotFoundException("File not found : ${fileToDelete.absolutePath}")
+                    }
                 }
             }
         }
@@ -115,7 +124,7 @@ class EventHandler { //Don't construct this object more than once. PLEASE.
                     insert(EventModel.tableName,null,thisContent)
                 }
                 else{
-                    throw IOException("File does not exists.")
+                    throw IOException("File does not exist. Path : $photoUri")
                 }
             }
         }
@@ -127,11 +136,6 @@ class EventHandler { //Don't construct this object more than once. PLEASE.
             val photoUri = parsePhotoUri(date,context.filesDir)
             return MediaStore.Images.Media.getBitmap(context.contentResolver, Uri.parse(photoUri.toString())) ?:
             BitmapFactory.decodeResource(context.resources, R.drawable.images) //Have a placeholder if url is not found somehow.
-        }
-        private fun convertTimestampToString(timestamp : Int) : String {
-            val calendar = Calendar.getInstance(Locale.ENGLISH)
-            calendar.timeInMillis = timestamp.toLong() * 1000
-            return DateFormat.format("dd-MM-yyyy HH:mm",calendar).toString()
         }
 
     }
