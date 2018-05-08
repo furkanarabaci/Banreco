@@ -21,17 +21,14 @@ import com.illegaldisease.banreco.databaserelated.*
  */
 class ItemFragment : Fragment() {
 
-    // TODO: Customize parameters
-    private var columnCount = 1
-
-    private var eventHandler : EventHandler? = null
+    private var columnCount = 1 //I don't know why this is necessary, but let it stay.
 
     private var listener : OnListFragmentInteractionListener? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        EventHandler.fillOutTables(context!!) //TODO: One of culprit of your async task.
+        EventHandler.fillOutTables(context!!)
         arguments?.let {
             columnCount = it.getInt(ARG_COLUMN_COUNT)
         }
@@ -87,7 +84,6 @@ class ItemFragment : Fragment() {
      * for more information.
      */
     interface OnListFragmentInteractionListener {
-        // TODO: Update argument type and name
         fun onListFragmentInteraction(item: EventsRemastered?)
     }
 

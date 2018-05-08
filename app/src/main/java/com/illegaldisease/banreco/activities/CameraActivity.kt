@@ -15,6 +15,7 @@ import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
 import android.hardware.Camera //Deprecated but who cares ? If i am bored, i will switch to camera2 again.
 import android.net.Uri
+import android.os.Build
 import android.provider.CalendarContract
 import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.Snackbar
@@ -46,7 +47,6 @@ import com.google.android.gms.vision.text.TextRecognizer
 import com.illegaldisease.banreco.ocrstuff.OcrDetectorProcessor
 import com.illegaldisease.banreco.ocrstuff.OcrGraphic
 import com.illegaldisease.banreco.R
-import com.illegaldisease.banreco.UnsupportedDevices
 import com.illegaldisease.banreco.camera.CameraSource
 import com.illegaldisease.banreco.camera.CameraSourcePreview
 import com.illegaldisease.banreco.camera.GraphicOverlay
@@ -61,7 +61,7 @@ import java.util.*
 class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,DatePickerDialog.OnDateSetListener, InternetConnectivityListener {
     companion object {
         private const val RC_SIGN_IN = 9001
-        private const val TAG = "OcrCaptureActivity"
+        private const val TAG = "CameraActivity"
 
         // Intent request code to handle updating play services if needed.
         private const val RC_HANDLE_GMS = 9001
@@ -69,9 +69,6 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         // Permission request codes need to be < 256
         private const val RC_HANDLE_CAMERA_PERM = 2
 
-        // Constants used to pass extra data in the intent
-        const val AutoFocus = "AutoFocus"
-        const val UseFlash = "UseFlash"
         const val TextBlockObject = "String"
     }
     private var mCameraSource: CameraSource? = null
@@ -83,7 +80,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     private var photoButton : FloatingActionButton ?= null
     private var flashButton : FloatingActionButton ?= null
     private var isFlashOn : Boolean ?= null //One boolean value will not hurt. This will be obsolete if flash is not supported.
-    private var isAutoFocusOn : Boolean ?= null //TODO: Implement.
+    private var isAutoFocusOn : Boolean ?= null
 
     // Helper objects for detecting taps and pinches.
     private var gestureDetector: GestureDetector? = null
@@ -97,7 +94,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
 
     private var mInternetAvailabilityChecker : InternetAvailabilityChecker? = null
     override fun onInternetConnectivityChanged(isConnected: Boolean) {
-        if(isConnected && isSupported()){
+        if(isConnected){
             progressBar!!.visibility = ProgressBar.INVISIBLE
             buildCamera()
             checkSignIn() // Attempts to login with async callbacks. be careful.
@@ -137,7 +134,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         mGraphicOverlay = findViewById(R.id.graphicOverlay)
 
         progressBar = findViewById(R.id.indeterminateBar)
-        createAlertDialog() //Only creates, does not show it.
+        warnUserAboutLibraries() //Only creates, does not show it.
     }
     override fun onStart() {
         super.onStart()
@@ -173,8 +170,9 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                 postSignIn()
             }
             else{
-                //TODO: Sign in is cancelled, do something else ?
-                initializeDrawerBar() // Initialize it with placeholders. Program will probably cease to work eventually.
+                // Sign in rejected. Program will probably cease to work eventually, warn user.
+                Snackbar.make(window.decorView.rootView,"You did not sign-in. Program may not work as expected.",Snackbar.LENGTH_LONG)
+                initializeDrawerBar()
             }
         }
     }
@@ -251,14 +249,13 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
             photoButton!!.show()
         }
     }
-    private fun createAlertDialog(){
-//      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        val alertBuilder: AlertDialog.Builder = AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
-        //We use Lollipop+ anyways.
-//      } else {
-//          alertBuilder = AlertDialog.Builder(this)
-//      }
-        alertBuilder!!.setTitle(R.string.alertdialogtitle)
+    private fun warnUserAboutLibraries(){
+        val alertBuilder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
+        } else {
+            AlertDialog.Builder(this)
+        }
+        alertBuilder.setTitle(R.string.alertdialogtitle)
                 .setMessage(R.string.alertdialogmessage)
                 .setPositiveButton(R.string.alertdialogclearcache) { _, _ ->
                     val thePackageName = "com.google.android.gms"
@@ -402,38 +399,6 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         startActivityForResult(signInIntent, RC_SIGN_IN) //We checked internet connection before
     }
 
-    private fun isSupported() : Boolean{
-        var deviceName = android.os.Build.DEVICE
-        if(deviceName.isNullOrBlank()) {
-            //TODO: You might warn user about things going on in this scope.
-            return false
-        }
-        deviceName = deviceName.toLowerCase()
-        // Some devices crash on a certain version of Google Play Services.
-        // https://github.com/googlesamples/android-vision/issues/269#issuecomment-339464902
-        // We therefore check for it here.
-        if(UnsupportedDevices().deviceWithDisabledTextCheck!!.contains(deviceName)){
-            //Well, end of the line. sorry. Device is not supported by Vision API. Warn user.
-            val alertBuilder: AlertDialog.Builder = AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
-            alertBuilder.setTitle(R.string.devicenotsupportedtitle)
-                    .setMessage("Your device : $deviceName" + R.string.devicenotsupportedmessage)
-                    .setPositiveButton(R.string.ok) { _, _ ->
-                        finish()
-                        System.exit(0) //Terminate app for good.
-                    }
-                    .setNegativeButton("I WANNA TRY"){_,_ ->
-                        progressBar!!.visibility = ProgressBar.INVISIBLE
-                        buildCamera() //At oninternetchange, we returned false and now we are here. Re-call things again.
-                        checkSignIn() // Attempts to login with async callbacks. be careful.
-                    }
-                    .show()
-            return false
-        }
-        else{
-            return true //If we survived through here, it is safe.
-        }
-    }
-
     private fun buildCamera(){
         // read parameters from the intent used to launch the activity.
         // Check for the camera permission before accessing the camera.  If the
@@ -486,7 +451,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
             alertDialog!!.show() //Always try to show it.
             // Check for low storage.  If there is low storage, the native library will not be
             // downloaded, so detection will not become operational.
-            val lowstorageFilter = IntentFilter(Intent.ACTION_DEVICE_STORAGE_LOW) //TODO: Find an alternative
+            val lowstorageFilter = IntentFilter(Intent.ACTION_DEVICE_STORAGE_LOW)
             val hasLowStorage = this.registerReceiver(null, lowstorageFilter) != null
             if (hasLowStorage) {
                 Toast.makeText(this, R.string.low_storage_error, Toast.LENGTH_LONG).show()
