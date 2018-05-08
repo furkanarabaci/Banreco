@@ -87,8 +87,11 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     private var progressBar : ProgressBar? = null
     private var photoButton : FloatingActionButton ?= null
     private var flashButton : FloatingActionButton ?= null
+
     private var isFlashOn : Boolean ?= null //One boolean value will not hurt. This will be obsolete if flash is not supported.
     private var isAutoFocusOn : Boolean ?= null
+    private var isCameraClicked : Boolean ?= null //This is to prevent repeatedly clicking camera button
+    private var isFlashClicked : Boolean ?= null //Same aspect with isCameraClicked
 
     // Helper objects for detecting taps and pinches.
     private var gestureDetector: GestureDetector? = null
@@ -126,9 +129,10 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
 
         isFlashOn = false
         isAutoFocusOn = false
+        isCameraClicked = false
+        isFlashClicked = false
 
-        photoButton = findViewById(R.id.fab_take_photo)
-        photoButton!!.setOnClickListener { takePicture() }
+        initializeCameraButton()
         initializeFlashButton()
 
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -230,21 +234,33 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
             flashButton = findViewById(R.id.fab_flash) //These two is hidden at the beginning.
             toggleButtonVisibility(true)
             flashButton!!.setOnClickListener{
-                isFlashOn = isFlashOn!!.not() //Just for better readability.
-                if(isFlashOn!!){
-                    mCameraSource!!.flashMode = Camera.Parameters.FLASH_MODE_TORCH
-                    flashButton!!.setImageResource(R.drawable.ic_flash_off_white_24px)
-                    restartCameraSource()
-                }
-                else{
-                    mCameraSource!!.flashMode = Camera.Parameters.FLASH_MODE_OFF
-                    flashButton!!.setImageResource(R.drawable.ic_flash_on_white_24px)
-                    restartCameraSource()
+                if(!isFlashClicked!!){
+                    isFlashOn = isFlashOn!!.not() //Just for better readability.
+                    if(isFlashOn!!){
+                        mCameraSource!!.flashMode = Camera.Parameters.FLASH_MODE_TORCH
+                        flashButton!!.setImageResource(R.drawable.ic_flash_off_white_24px)
+                        restartCameraSource()
+                    }
+                    else{
+                        mCameraSource!!.flashMode = Camera.Parameters.FLASH_MODE_OFF
+                        flashButton!!.setImageResource(R.drawable.ic_flash_on_white_24px)
+                        restartCameraSource()
+                    }
+                    isFlashClicked = true
                 }
             }
         }
         else{
             //Flash is not supported. Do not even bother creating flash button. Just be aware of nulls.
+        }
+    }
+    private fun initializeCameraButton(){
+        photoButton = findViewById(R.id.fab_take_photo)
+        photoButton!!.setOnClickListener {
+            if(!isCameraClicked!!) {
+                takePicture()
+                isCameraClicked = true
+            }
         }
     }
     private fun toggleButtonVisibility(newVisibility : Boolean){
@@ -505,6 +521,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         mPreview!!.stop()
         buildCamera()
         startCameraSource()
+        isFlashClicked = false
     }
     private fun takePicture(){
         mCameraSource!!.takePicture(null, CameraSource.PictureCallback {
@@ -533,6 +550,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                         close()
                     }
                     EventHandler.addEvent(this, EventModel(0,date.toInt()))
+                    isCameraClicked = false //Make it clickable again.
                 } catch (e : Exception) {
                     e.printStackTrace()
                 }
