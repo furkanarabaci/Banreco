@@ -52,6 +52,7 @@ dependencies {
     implementation "com.android.support:design:${versions_supportLib}"
     implementation "com.android.support:support-v4:${versions_supportLib}"
     implementation "com.android.support:support-v13:${versions_supportLib}"
+    implementation "com.android.support:support-compat:${versions_supportLib}"
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "com.google.android.gms:play-services-auth:${version_gmsLib}"

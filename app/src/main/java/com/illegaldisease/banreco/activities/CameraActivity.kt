@@ -590,7 +590,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                 setResult(CommonStatusCodes.SUCCESS, data)
             }
             else {
-                Log.d(TAG, "text d ata is null")
+                Log.d(TAG, "text data is null")
             }
         }
         else {

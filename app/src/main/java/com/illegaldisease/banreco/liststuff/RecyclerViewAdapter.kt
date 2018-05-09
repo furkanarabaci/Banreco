@@ -16,7 +16,6 @@ import com.illegaldisease.banreco.databaserelated.EventsRemastered
 import com.illegaldisease.banreco.liststuff.ItemFragment.OnListFragmentInteractionListener
 import java.util.*
 import android.content.Intent
-import android.support.v4.content.ContextCompat.startActivity
 import android.util.Log
 import com.illegaldisease.banreco.activities.ImageActivity
 

@@ -32,7 +32,6 @@ public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
     public OcrDetectorProcessor(GraphicOverlay<OcrGraphic> ocrGraphicOverlay) {
         mGraphicOverlay = ocrGraphicOverlay;
     }
-
     /**
      * Called by the detector to deliver detection results.
      * If your application called for it, this could be a place to check for

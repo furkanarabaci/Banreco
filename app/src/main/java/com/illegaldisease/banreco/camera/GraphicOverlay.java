@@ -207,4 +207,7 @@ public class GraphicOverlay<T extends GraphicOverlay.Graphic> extends View {
             }
         }
     }
+    public Set<T> getMGraphics(){
+        return mGraphics;
+    }
 }
