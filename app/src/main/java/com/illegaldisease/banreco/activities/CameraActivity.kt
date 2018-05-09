@@ -19,6 +19,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.CalendarContract
 import android.provider.MediaStore
+import android.provider.MediaStore.*
 import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.Snackbar
 import android.support.v4.app.ActivityCompat
@@ -550,6 +551,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                         close()
                     }
                     EventHandler.addEvent(this, EventModel(0,date.toInt()))
+
                     isCameraClicked = false //Make it clickable again.
                 } catch (e : Exception) {
                     e.printStackTrace()

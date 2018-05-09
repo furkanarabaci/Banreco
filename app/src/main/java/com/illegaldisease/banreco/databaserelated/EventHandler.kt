@@ -8,14 +8,12 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.MediaStore
-import android.text.format.DateFormat
-import android.util.Log
+import android.support.v4.content.FileProvider
 import org.jetbrains.anko.db.parseList
 import org.jetbrains.anko.db.rowParser
 import org.jetbrains.anko.db.select
 import org.jetbrains.anko.doAsyncResult
 import java.io.File
-import java.util.*
 import kotlin.collections.ArrayList
 import com.illegaldisease.banreco.R
 import org.jetbrains.anko.doAsync
@@ -23,7 +21,6 @@ import org.jetbrains.anko.uiThread
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.net.URI
-import java.text.SimpleDateFormat
 
 
 class EventHandler { //Don't construct this object more than once. PLEASE.
@@ -34,7 +31,7 @@ class EventHandler { //Don't construct this object more than once. PLEASE.
         private fun addEventToLists(context: Context, currentModel : EventModel){
             //This function will separate entries using current date ( past or future ) and place it to Lists.
             doAsync {
-                val thisPhoto = convertToBitmap(context, currentModel.date.toString())
+                val thisPhoto = convertToBitmap(context, currentModel.date)
                 uiThread {
                     if(System.currentTimeMillis()/1000 >= currentModel.date){
                         //Why would i compare two calendars, when i have timestamps already ???
@@ -102,7 +99,7 @@ class EventHandler { //Don't construct this object more than once. PLEASE.
                         }
                     }
                     //Probably not a good place, but i will refactor later if i get an error because of this.
-                    val fileToDelete = File(parsePhotoUri(eventToDelete.date.toString(),context.filesDir))
+                    val fileToDelete = File(parsePhotoUri(eventToDelete.date,context.filesDir))
                     //I think this is too complex, but it just tries to find a file.
                     if(fileToDelete.exists()){
                         fileToDelete.delete()
@@ -117,7 +114,7 @@ class EventHandler { //Don't construct this object more than once. PLEASE.
         fun addEvent(context: Context, eventModel: EventModel){
             //This function will only be called when taking photo. You can assign id whatever you want, it will not be used.
             context.database.use {
-                val photoUri = parsePhotoUri(eventModel.date.toString(), context.filesDir)
+                val photoUri = parsePhotoUri(eventModel.date, context.filesDir)
                 if(File(photoUri).exists()){ //Check if file is created properly before we add it to database.
                     val thisContent = ContentValues()
                     thisContent.put(EventModel.dateColumn, eventModel.date)
@@ -128,15 +125,21 @@ class EventHandler { //Don't construct this object more than once. PLEASE.
                 }
             }
         }
-        private fun parsePhotoUri(date : String, filesDir : File) : URI{
-            return URI("file://${filesDir.absolutePath}/$date.jpeg")
+        @Throws(FileNotFoundException::class)
+        fun parsePhotoUri(date : Int, filesDir : File) : URI{
+            val parsedURI = URI("file://${filesDir.absolutePath}/$date.jpeg")
+            if(!File(parsedURI).exists()){
+                throw FileNotFoundException("File not found. Path : $parsedURI")
+            }
+            return parsedURI
         }
-
-        private fun convertToBitmap(context: Context, date : String) : Bitmap {
+        fun convertToBitmap(context: Context, date : Int) : Bitmap {
             val photoUri = parsePhotoUri(date,context.filesDir)
             return MediaStore.Images.Media.getBitmap(context.contentResolver, Uri.parse(photoUri.toString())) ?:
             BitmapFactory.decodeResource(context.resources, R.drawable.images) //Have a placeholder if url is not found somehow.
         }
-
+        fun getContentUriOfFile(context: Context,fileURI: URI): Uri{
+            return FileProvider.getUriForFile(context,context.packageName + ".provider",File(fileURI))
+        }
     }
 }

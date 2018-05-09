@@ -10,16 +10,27 @@
 
     <application
         android:allowBackup="false"
-        android:icon="@mipmap/logo"
         android:hardwareAccelerated="true"
+        android:icon="@mipmap/logo"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/logo_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-        <meta-data android:name="com.google.android.gms.vision.DEPENDENCIES" android:value="ocr"/>
+        <meta-data
+            android:name="com.google.android.gms.vision.DEPENDENCIES"
+            android:value="ocr" />
+         <provider android:name="android.support.v4.content.FileProvider"
+         android:authorities="com.illegaldisease.banreco.provider"
+         android:exported="false"
+         android:grantUriPermissions="true">
+         <meta-data
+         android:name="android.support.FILE_PROVIDER_PATHS"
+         android:resource="@xml/file_provider_paths"/>
+         </provider>
         <activity android:name=".activities.CameraActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -33,7 +44,8 @@
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
         <activity
             android:name=".activities.SettingsActivity"
-            android:label="@string/title_activity_settings"/>
+            android:label="@string/title_activity_settings" />
+        <activity android:name=".activities.ImageActivity" />
     </application>
 
 </manifest>

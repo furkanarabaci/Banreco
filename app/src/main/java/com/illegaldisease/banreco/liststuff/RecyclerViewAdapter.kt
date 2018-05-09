@@ -15,27 +15,23 @@ import com.illegaldisease.banreco.databaserelated.EventsRemastered
 
 import com.illegaldisease.banreco.liststuff.ItemFragment.OnListFragmentInteractionListener
 import java.util.*
+import android.content.Intent
+import android.support.v4.content.ContextCompat.startActivity
+import android.util.Log
+import com.illegaldisease.banreco.activities.ImageActivity
+
 
 class RecyclerViewAdapter(private val context : Context, private var mValues: MutableList<EventsRemastered>, private val mListener: OnListFragmentInteractionListener?)
     : RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder>() {
-    private val mOnClickListener: View.OnClickListener
-    private var fab : FloatingActionButton? = null
+    private var mOnClickListener: View.OnClickListener ?= null
 
     init {
-        mOnClickListener = View.OnClickListener { v ->
-            val item = v.tag as? EventsRemastered
-            // Notify the active callbacks interface (the activity, if the fragment is attached to
-            // one) that an item has been selected.
-            mListener?.onListFragmentInteraction(item)
-        }
 
-    }
+        }
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.fragment_list, parent, false)
-        fab = view.findViewById(R.id.fragmentfloatingActionButton)
         return ViewHolder(view)
     }
-
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = mValues[position]
         with(holder.mView) {
@@ -43,15 +39,30 @@ class RecyclerViewAdapter(private val context : Context, private var mValues: Mu
             holder.eventDate!!.text = convertTimestampToString(item.date)
             setOnClickListener(mOnClickListener)
         }
-        fab!!.setOnClickListener {
+        holder.fab!!.setOnClickListener {
             try {
                 EventHandler.deleteEvent(context, item) //Deletes from database and original static list.
             }
             catch (e : Exception){
                 mValues.remove(item) //Deletes from current adapter.
             }
+            notifyDataSetChanged()
+            notifyItemInserted(position)
+            notifyItemRangeInserted(position,itemCount)
             notifyItemRemoved(position)
             notifyItemRangeChanged(position, itemCount)
+        }
+        holder.eventImage!!.setOnClickListener {
+            try{
+                val intent = Intent(context, ImageActivity:: class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    putExtra("Bitmap",item.date)
+                }
+                context.startActivity(intent)
+            }
+            catch (er : NullPointerException){
+                Log.e("onclicklistener",Log.getStackTraceString(er))
+            }
         }
     }
     override fun getItemCount(): Int = mValues.size
@@ -59,9 +70,17 @@ class RecyclerViewAdapter(private val context : Context, private var mValues: Mu
     inner class ViewHolder(val mView: View) : RecyclerView.ViewHolder(mView) {
         var eventDate : TextView? = null
         var eventImage : ImageView? = null
+        var fab : FloatingActionButton? = null
         init {
             eventDate = mView.findViewById(R.id.listDate)
             eventImage = mView.findViewById(R.id.listImage)
+            fab = mView.findViewById(R.id.fragmentfloatingActionButton)
+            mOnClickListener = View.OnClickListener { v ->
+                val item = v.tag as? EventsRemastered
+                // Notify the active callbacks interface (the activity, if the fragment is attached to
+                // one) that an item has been selected.
+                mListener?.onListFragmentInteraction(item)
+            }
         }
     }
     private fun convertTimestampToString(timestamp : Int) : String {
