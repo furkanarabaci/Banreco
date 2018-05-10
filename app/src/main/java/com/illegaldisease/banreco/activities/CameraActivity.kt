@@ -56,16 +56,12 @@ import com.illegaldisease.banreco.databaserelated.EventHandler
 import com.illegaldisease.banreco.databaserelated.EventModel
 import com.treebo.internetavailabilitychecker.InternetAvailabilityChecker
 import com.treebo.internetavailabilitychecker.InternetConnectivityListener
-import com.wdullaer.materialdatetimepicker.date.DatePickerDialog
-import com.wdullaer.materialdatetimepicker.time.TimePickerDialog
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 
-import java.util.*
-
-class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,DatePickerDialog.OnDateSetListener, InternetConnectivityListener {
+class CameraActivity : AppCompatActivity(), InternetConnectivityListener {
     companion object {
         private const val RC_SIGN_IN = 9001
         private const val TAG = "CameraActivity"
@@ -100,7 +96,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     private lateinit var profilePic : Bitmap
     private var profileMail : String = "notsignedin@placeholder.com"
     private var profileName : String = "Anonymouse"
-    private var lastEventDate : Calendar = GregorianCalendar.getInstance(TimeZone.getDefault()) //Don't forget to re-initialize
+
 
     private lateinit var mInternetAvailabilityChecker : InternetAvailabilityChecker
     override fun onInternetConnectivityChanged(isConnected: Boolean) {
@@ -122,7 +118,6 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         InternetAvailabilityChecker.init(this)
 
         profilePic = BitmapFactory.decodeResource(this@CameraActivity.resources, R.drawable.photo1)
-        lastEventDate = GregorianCalendar.getInstance(TimeZone.getDefault()) //Don't forget to re-initialize
 
         initializeCameraButton()
         initializeFlashButton()
@@ -177,17 +172,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
             }
         }
     }
-    override fun onDateSet(view: DatePickerDialog?, year: Int, monthOfYear: Int, dayOfMonth: Int) {
-        lastEventDate.set(Calendar.MONTH, monthOfYear)
-        lastEventDate.set(Calendar.YEAR, year)
-        lastEventDate.set(Calendar.DAY_OF_MONTH, dayOfMonth)
-        pickTime()
-    }
-    override fun onTimeSet(view: TimePickerDialog?, hourOfDay: Int, minute: Int, second: Int) {
-        lastEventDate.set(Calendar.HOUR_OF_DAY, hourOfDay)
-        lastEventDate.set(Calendar.MINUTE, minute)
-        lastEventDate.set(Calendar.SECOND, second)
-    }
+
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         if (requestCode != RC_HANDLE_CAMERA_PERM) {
             Log.d(TAG, "Got unexpected permission result: $requestCode")
@@ -545,25 +530,6 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         })
     }
 
-    private fun pickTime(){
-        val tpd = TimePickerDialog.newInstance(
-                this@CameraActivity,
-                true
-        )
-        tpd.show(fragmentManager,"TimePicker")
-        tpd.version = TimePickerDialog.Version.VERSION_2
-    }
-    private fun pickDate(){
-        val now = Calendar.getInstance()
-        val dpd = DatePickerDialog.newInstance(
-                this@CameraActivity,
-                now.get(Calendar.YEAR),
-                now.get(Calendar.MONTH),
-                now.get(Calendar.DAY_OF_MONTH)
-        )
-        dpd.show(fragmentManager, "DatePicker")
-        dpd.version = DatePickerDialog.Version.VERSION_2
-    }
 
     private fun onTap(rawX : Float ,rawY : Float) : Boolean {
         val graphic = mGraphicOverlay.getGraphicAtLocation(rawX, rawY)
