@@ -18,7 +18,7 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
     private lateinit var setTimeButton : FloatingActionButton
     private lateinit var doneButton : FloatingActionButton
 
-    private var lastEventDate : Calendar = GregorianCalendar.getInstance(TimeZone.getDefault()) //Don't forget to re-initialize
+    private var lastEventDate : Calendar = GregorianCalendar.getInstance(TimeZone.getDefault())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,8 +44,8 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
         doneButton.show()
 
         trashButton.setOnClickListener { /*TODO: Get rid of image here */ }
-        setDateButton.setOnClickListener { /*TODO: Open DateDialogPicker here */}
-        setTimeButton.setOnClickListener { /*TODO: Open TimeDialogPicker here */}
+        setDateButton.setOnClickListener { pickDate() }
+        setTimeButton.setOnClickListener { pickTime() }
         doneButton.setOnClickListener { /*TODO: Add to database here */ }
     }
     private fun pickTime(){
@@ -71,12 +71,10 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
         lastEventDate.set(Calendar.MONTH, monthOfYear)
         lastEventDate.set(Calendar.YEAR, year)
         lastEventDate.set(Calendar.DAY_OF_MONTH, dayOfMonth)
-        pickTime()
     }
     override fun onTimeSet(view: TimePickerDialog?, hourOfDay: Int, minute: Int, second: Int) {
         lastEventDate.set(Calendar.HOUR_OF_DAY, hourOfDay)
         lastEventDate.set(Calendar.MINUTE, minute)
         lastEventDate.set(Calendar.SECOND, second)
     }
-
 }

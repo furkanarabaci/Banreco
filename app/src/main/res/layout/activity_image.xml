@@ -73,4 +73,12 @@
         app:srcCompat="@drawable/ic_date_range_black_24dp"
         android:focusable="true"
         android:visibility="invisible"/>
+
+    <TextView
+        android:id="@+id/imageTextDate"
+        android:layout_width="250dp"
+        android:layout_height="24sp"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="101dp" />
 </RelativeLayout>

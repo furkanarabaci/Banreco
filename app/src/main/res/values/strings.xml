@@ -112,4 +112,7 @@
 
     <string name="pref_title_vibrate">Vibrate</string>
     <string name="your_image_goes_here">Your image goes here</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
