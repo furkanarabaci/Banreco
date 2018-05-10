@@ -18,8 +18,6 @@ import android.hardware.Camera //Deprecated but who cares ? If i am bored, i wil
 import android.net.Uri
 import android.os.Build
 import android.provider.CalendarContract
-import android.provider.MediaStore
-import android.provider.MediaStore.*
 import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.Snackbar
 import android.support.v4.app.ActivityCompat
@@ -53,7 +51,7 @@ import com.illegaldisease.banreco.R
 import com.illegaldisease.banreco.camera.CameraSource
 import com.illegaldisease.banreco.camera.CameraSourcePreview
 import com.illegaldisease.banreco.camera.GraphicOverlay
-import com.illegaldisease.banreco.databaserelated.DatabaseHandler
+
 import com.illegaldisease.banreco.databaserelated.EventHandler
 import com.illegaldisease.banreco.databaserelated.EventModel
 import com.treebo.internetavailabilitychecker.InternetAvailabilityChecker
@@ -80,40 +78,40 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
 
         const val TextBlockObject = "String"
     }
-    private var mCameraSource: CameraSource? = null
-    private var mPreview: CameraSourcePreview? = null
-    private var mGraphicOverlay: GraphicOverlay<OcrGraphic>? = null
+    private lateinit var mCameraSource: CameraSource
+    private lateinit var mPreview: CameraSourcePreview
+    private lateinit var mGraphicOverlay: GraphicOverlay<OcrGraphic>
 
-    private var alertDialog : AlertDialog? = null
-    private var progressBar : ProgressBar? = null
-    private var photoButton : FloatingActionButton ?= null
-    private var flashButton : FloatingActionButton ?= null
+    private lateinit var alertDialog : AlertDialog
+    private lateinit var progressBar : ProgressBar
+    private lateinit var photoButton : FloatingActionButton
+    private lateinit var flashButton : FloatingActionButton
 
-    private var isFlashOn : Boolean ?= null //One boolean value will not hurt. This will be obsolete if flash is not supported.
-    private var isAutoFocusOn : Boolean ?= null
-    private var isCameraClicked : Boolean ?= null //This is to prevent repeatedly clicking camera button
-    private var isFlashClicked : Boolean ?= null //Same aspect with isCameraClicked
+    private var isFlashOn : Boolean = false //One boolean value will not hurt. This will be obsolete if flash is not supported.
+    private var isAutoFocusOn : Boolean = false
+    private var isCameraClicked : Boolean = false //This is to prevent repeatedly clicking camera button
+    private var isFlashClicked : Boolean = false //Same aspect with isCameraClicked
 
     // Helper objects for detecting taps and pinches.
-    private var gestureDetector: GestureDetector? = null
+    private lateinit var gestureDetector: GestureDetector
 
-    private var mGoogleSignInClient : GoogleSignInClient? = null
-    private var signInAccount : GoogleSignInAccount? = null
-    private var profilePic : Bitmap? = null
-    private var profileMail : String? = null
-    private var profileName : String? = null
-    private var lastEventDate : Calendar? = null
+    private lateinit var mGoogleSignInClient : GoogleSignInClient
+    private lateinit var signInAccount : GoogleSignInAccount
+    private lateinit var profilePic : Bitmap
+    private var profileMail : String = "notsignedin@placeholder.com"
+    private var profileName : String = "Anonymouse"
+    private var lastEventDate : Calendar = GregorianCalendar.getInstance(TimeZone.getDefault()) //Don't forget to re-initialize
 
-    private var mInternetAvailabilityChecker : InternetAvailabilityChecker? = null
+    private lateinit var mInternetAvailabilityChecker : InternetAvailabilityChecker
     override fun onInternetConnectivityChanged(isConnected: Boolean) {
         if(isConnected){
-            progressBar!!.visibility = ProgressBar.INVISIBLE
+            progressBar.visibility = ProgressBar.INVISIBLE
             buildCamera()
             checkSignIn() // Attempts to login with async callbacks. be careful.
         }
         else{
             Snackbar.make(window.decorView.rootView,"Waiting for internet connection",Snackbar.LENGTH_LONG).show()
-            progressBar!!.visibility = ProgressBar.VISIBLE
+            progressBar.visibility = ProgressBar.VISIBLE
         }
     }
 
@@ -124,14 +122,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         InternetAvailabilityChecker.init(this)
 
         profilePic = BitmapFactory.decodeResource(this@CameraActivity.resources, R.drawable.photo1)
-        profileMail = "notsignedin@placeholder.com" //Placeholder values
-        profileName = "Anonymouse" //I know it is anonymous, it is intended.
         lastEventDate = GregorianCalendar.getInstance(TimeZone.getDefault()) //Don't forget to re-initialize
-
-        isFlashOn = false
-        isAutoFocusOn = false
-        isCameraClicked = false
-        isFlashClicked = false
 
         initializeCameraButton()
         initializeFlashButton()
@@ -146,6 +137,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         mPreview = findViewById(R.id.preview)
         mGraphicOverlay = findViewById(R.id.graphicOverlay)
 
+        mInternetAvailabilityChecker = InternetAvailabilityChecker.getInstance()
         progressBar = findViewById(R.id.indeterminateBar)
         warnUserAboutLibraries() //Only creates, does not show it.
     }
@@ -153,7 +145,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         super.onStart()
         gestureDetector = GestureDetector(this, CaptureGestureListener())
         mInternetAvailabilityChecker = InternetAvailabilityChecker.getInstance()
-        mInternetAvailabilityChecker!!.addInternetConnectivityListener(this)
+        mInternetAvailabilityChecker.addInternetConnectivityListener(this)
         initializeDrawerBar()
     }
     override fun onResume() {
@@ -162,16 +154,12 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     }
     override fun onPause() {
         super.onPause()
-        if (mPreview != null) {
-            mPreview!!.stop()
-        }
+        mPreview.stop()
     }
     override fun onDestroy() {
         super.onDestroy()
-        mInternetAvailabilityChecker!!.removeInternetConnectivityChangeListener(this)
-        if (mPreview != null) {
-            mPreview!!.release()
-        }
+        mInternetAvailabilityChecker.removeInternetConnectivityChangeListener(this)
+        mPreview.release()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -190,15 +178,15 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         }
     }
     override fun onDateSet(view: DatePickerDialog?, year: Int, monthOfYear: Int, dayOfMonth: Int) {
-        lastEventDate!!.set(Calendar.MONTH, monthOfYear)
-        lastEventDate!!.set(Calendar.YEAR, year)
-        lastEventDate!!.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+        lastEventDate.set(Calendar.MONTH, monthOfYear)
+        lastEventDate.set(Calendar.YEAR, year)
+        lastEventDate.set(Calendar.DAY_OF_MONTH, dayOfMonth)
         pickTime()
     }
     override fun onTimeSet(view: TimePickerDialog?, hourOfDay: Int, minute: Int, second: Int) {
-        lastEventDate!!.set(Calendar.HOUR_OF_DAY, hourOfDay)
-        lastEventDate!!.set(Calendar.MINUTE, minute)
-        lastEventDate!!.set(Calendar.SECOND, second)
+        lastEventDate.set(Calendar.HOUR_OF_DAY, hourOfDay)
+        lastEventDate.set(Calendar.MINUTE, minute)
+        lastEventDate.set(Calendar.SECOND, second)
     }
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         if (requestCode != RC_HANDLE_CAMERA_PERM) {
@@ -231,20 +219,20 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         }
     }
     private fun initializeFlashButton(){
+        flashButton = findViewById(R.id.fab_flash) //These two is hidden at the beginning.
         if(packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)){
-            flashButton = findViewById(R.id.fab_flash) //These two is hidden at the beginning.
             toggleButtonVisibility(true)
-            flashButton!!.setOnClickListener{
-                if(!isFlashClicked!!){
-                    isFlashOn = isFlashOn!!.not() //Just for better readability.
-                    if(isFlashOn!!){
-                        mCameraSource!!.flashMode = Camera.Parameters.FLASH_MODE_TORCH
-                        flashButton!!.setImageResource(R.drawable.ic_flash_off_white_24px)
+            flashButton.setOnClickListener{
+                if(!isFlashClicked){
+                    isFlashOn = isFlashOn.not() //Just for better readability.
+                    if(isFlashOn){
+                        mCameraSource.flashMode = Camera.Parameters.FLASH_MODE_TORCH
+                        flashButton.setImageResource(R.drawable.ic_flash_off_white_24px)
                         restartCameraSource()
                     }
                     else{
-                        mCameraSource!!.flashMode = Camera.Parameters.FLASH_MODE_OFF
-                        flashButton!!.setImageResource(R.drawable.ic_flash_on_white_24px)
+                        mCameraSource.flashMode = Camera.Parameters.FLASH_MODE_OFF
+                        flashButton.setImageResource(R.drawable.ic_flash_on_white_24px)
                         restartCameraSource()
                     }
                     isFlashClicked = true
@@ -257,8 +245,8 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     }
     private fun initializeCameraButton(){
         photoButton = findViewById(R.id.fab_take_photo)
-        photoButton!!.setOnClickListener {
-            if(!isCameraClicked!!) {
+        photoButton.setOnClickListener {
+            if(!isCameraClicked) {
                 takePicture()
                 isCameraClicked = true
             }
@@ -266,12 +254,12 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     }
     private fun toggleButtonVisibility(newVisibility : Boolean){
         if(!newVisibility){
-            flashButton?.hide()
-            photoButton!!.hide()
+            flashButton.hide()
+            photoButton.hide()
         }
         else{
-            flashButton?.show()
-            photoButton!!.show()
+            flashButton.show()
+            photoButton.show()
         }
     }
     private fun warnUserAboutLibraries(){
@@ -309,9 +297,9 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         drawer {
             accountHeader{
                 background = R.drawable.images
-                profile(profileName!!,profileMail!!){
+                profile(profileName,profileMail){
                     //According to google, photoUrl will be null if user does not have Google+ enabled and have profile there. So i will add placeholder for now.
-                    iconBitmap = profilePic!! //Fallback is described at oncreate
+                    iconBitmap = profilePic //Fallback is described at oncreate
                     //TODO: Consider adding sign-out options ??
                 }
             }
@@ -378,7 +366,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     }
 
     private fun checkSignIn(){
-        val task = mGoogleSignInClient!!.silentSignIn()
+        val task = mGoogleSignInClient.silentSignIn()
         if (task.isSuccessful) {
             // There's immediate result available.
             signInAccount = task.result
@@ -400,12 +388,12 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         }
     }
     private fun postSignIn() {
-        val currentUri = signInAccount!!.photoUrl
-        profileName = signInAccount!!.displayName
-        profileMail = signInAccount!!.email
+        val currentUri = signInAccount.photoUrl
+        profileName = signInAccount.displayName ?: profileName
+        profileMail = signInAccount.email ?: profileMail
         val target = object : SimpleTarget<Bitmap>() {
             override fun onResourceReady(resource: Bitmap?, transition: Transition<in Bitmap>?) {
-                profilePic = resource
+                profilePic = resource ?: profilePic
                 initializeDrawerBar()
             }
             override fun onLoadFailed(errorDrawable: Drawable?) {
@@ -420,7 +408,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                 .into(target)
     }
     private fun signInToGoogle(){
-        val signInIntent = mGoogleSignInClient!!.signInIntent
+        val signInIntent = mGoogleSignInClient.signInIntent
         startActivityForResult(signInIntent, RC_SIGN_IN) //We checked internet connection before
     }
 
@@ -451,7 +439,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
                     RC_HANDLE_CAMERA_PERM)
         }
 
-        Snackbar.make(mGraphicOverlay!!, R.string.permission_camera_rationale,
+        Snackbar.make(mGraphicOverlay, R.string.permission_camera_rationale,
                 Snackbar.LENGTH_INDEFINITE)
                 .setAction(R.string.ok, listener)
                 .show()
@@ -473,7 +461,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
              * available. The detectors will automatically become operational once the library
              * downloads complete on device.
              */
-            alertDialog!!.show() //Always try to show it.
+            alertDialog.show() //Always try to show it.
             // Check for low storage.  If there is low storage, the native library will not be
             // downloaded, so detection will not become operational.
             val lowstorageFilter = IntentFilter(Intent.ACTION_DEVICE_STORAGE_LOW)
@@ -484,15 +472,15 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
             }
         }
         else{
-            alertDialog!!.dismiss()
+            alertDialog.dismiss()
             // Creates and starts the camera.  Note that this uses a higher resolution in comparison
             // to other detection examples to enable the text recognizer to detect small pieces of text.
             mCameraSource = CameraSource.Builder(applicationContext, textRecognizer)
                     .setFacing(CameraSource.CAMERA_FACING_BACK)
                     .setRequestedPreviewSize(1280, 1024)
                     .setRequestedFps(2.0f)
-                    .setFlashMode(if (isFlashOn!!) Camera.Parameters.FLASH_MODE_TORCH else null)
-                    .setFocusMode(if (isAutoFocusOn!!) Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE else null)
+                    .setFlashMode(if (isFlashOn) Camera.Parameters.FLASH_MODE_TORCH else null)
+                    .setFocusMode(if (isAutoFocusOn) Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE else null)
                     .build()
         }
 
@@ -505,27 +493,25 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
             val dlg = GoogleApiAvailability.getInstance().getErrorDialog(this, code, RC_HANDLE_GMS)
             dlg.show()
         }
-        if (mCameraSource != null) {
-            try {
-
-                checkAutoFocus() //And enable it if it is supported.
-                mPreview!!.start(mCameraSource, mGraphicOverlay)
-                toggleButtonVisibility(true)
-            } catch (e : IOException) {
-                Log.e(TAG, "Unable to start camera source.", e)
-                mCameraSource!!.release()
-                mCameraSource = null
-            }
+        try {
+            checkAutoFocus() //And enable it if it is supported.
+            mPreview.start(mCameraSource, mGraphicOverlay)
+            toggleButtonVisibility(true)
+        }
+        catch (e : IOException) {
+            Log.e(TAG, "Unable to start camera source.", e)
+            mCameraSource.release()
+            //mCameraSource = null
         }
     }
     private fun restartCameraSource() {
-        mPreview!!.stop()
+        mPreview.stop()
         buildCamera()
         startCameraSource()
         isFlashClicked = false
     }
     private fun takePicture(){
-        mCameraSource!!.takePicture(null, CameraSource.PictureCallback {
+        mCameraSource.takePicture(null, CameraSource.PictureCallback {
             val imageFile : File
                 try {
                     // convert byte array into bitmap
@@ -580,7 +566,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
     }
 
     private fun onTap(rawX : Float ,rawY : Float) : Boolean {
-        val graphic = mGraphicOverlay!!.getGraphicAtLocation(rawX, rawY)
+        val graphic = mGraphicOverlay.getGraphicAtLocation(rawX, rawY)
         var text : TextBlock? = null
         if (graphic != null) {
             text = graphic.textBlock
@@ -599,7 +585,7 @@ class CameraActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,D
         return text != null
     }
     override fun dispatchTouchEvent(e: MotionEvent?): Boolean {
-        val c = gestureDetector!!.onTouchEvent(e)
+        val c = gestureDetector.onTouchEvent(e)
 
         return c || super.dispatchTouchEvent(e)
     }
