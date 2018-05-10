@@ -19,14 +19,17 @@
         <meta-data
             android:name="com.google.android.gms.vision.DEPENDENCIES"
             android:value="ocr" />
-         <provider android:name="android.support.v4.content.FileProvider"
-         android:authorities="com.illegaldisease.banreco.provider"
-         android:exported="false"
-         android:grantUriPermissions="true">
-         <meta-data
-         android:name="android.support.FILE_PROVIDER_PATHS"
-         android:resource="@xml/file_provider_paths"/>
-         </provider>
+
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="com.illegaldisease.banreco.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_provider_paths" />
+        </provider>
+
         <activity android:name=".camera.CameraActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -46,6 +49,7 @@
             android:name=".activities.SettingsActivity"
             android:label="@string/title_activity_settings" />
         <activity android:name=".activities.ImageActivity" />
+        <activity android:name=".activities.AboutActivity"></activity>
     </application>
 
 </manifest>

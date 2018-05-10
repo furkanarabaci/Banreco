@@ -27,11 +27,15 @@ import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 
 import com.illegaldisease.banreco.R
+import com.illegaldisease.banreco.activities.AboutActivity
 import com.illegaldisease.banreco.activities.EventsActivity
 import com.illegaldisease.banreco.activities.LogsActivity
 import com.illegaldisease.banreco.activities.SettingsActivity
 
 import com.treebo.internetavailabilitychecker.InternetAvailabilityChecker
+import mehdi.sakout.aboutpage.AboutPage
+import mehdi.sakout.aboutpage.Element
+
 
 class CameraActivity : AppCompatActivity(), CameraFragment.MyFragmentCallback {
     override fun drawBar() {
@@ -122,7 +126,7 @@ class CameraActivity : AppCompatActivity(), CameraFragment.MyFragmentCallback {
             secondaryItem(getString(R.string.drawer_about)) {
                 icon = R.drawable.ic_more_black_24dp
                 onClick {_ ->
-                    //I don't care, leave it empty
+                    startActivity(Intent(this@CameraActivity, AboutActivity:: class.java))
                     false
                 }
             }
@@ -198,5 +202,4 @@ class CameraActivity : AppCompatActivity(), CameraFragment.MyFragmentCallback {
         val signInIntent = mGoogleSignInClient.signInIntent
         startActivityForResult(signInIntent, RC_SIGN_IN) //We checked internet connection before
     }
-
 }
