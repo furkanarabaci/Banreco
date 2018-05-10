@@ -1,61 +1,43 @@
 package com.illegaldisease.banreco.ocrstuff
 
-import java.text.ParseException
 import java.util.*
 
 class OcrHandler(private var graphicsList : Set<OcrGraphic>){
-    private var stringList : MutableList<String>?= null
-    private var monthList : List<String> ?= null
-    private var day : Int ?= -1 //1-30
-    private var month : Int ?= -1 //0 = january, 11 = december etc..
-    private var year : Int ?= -1 //4 numbered character.
-    private var hour : Int ?= -1 //1-60
-    private var minute : Int ?= -1 //1-60
+    private val stringList : MutableList<String> = ArrayList()
+    private val monthList : List<String> = ArrayList(listOf("Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"))
+    private var day : Int = -1 //1-30
+    private var month : Int = -1 //0 = january, 11 = december etc..
+    private var year : Int = -1 //4 numbered character.
+    private var hour : Int = -1 //1-60
+    private var minute : Int = -1 //1-60
     init{
-        stringList = ArrayList()
-        monthList = ArrayList(listOf("Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"))
         splitThings()
     }
     private fun splitThings(){
         //Try to add more regex with trial and error.
         graphicsList.forEach  {
             it.textBlock.toString().split("\\s+ | -+ | /+").forEach {
-                stringList!!.add(it) //Regex will probably not work.
+                stringList.add(it) //Regex will probably not work.
             }
 
         }
     }
     private fun tryToParse(){ //Very ugly code, i will refactor later. aand other hilarious jokes you tell on yourself...
-        stringList!!.forEach {
+        stringList.forEach {
             try {
-                var buffer = parseDay(it)
+                if(day == -1) day = parseDay(it)
+                if(month == -1) month = parseMonth(it)
+                if(year == -1) year = parseYear(it)
+                if(hour == -1) hour = parseHour(it)
+                if(minute == -1) minute = parseMinute(it)
                 //If returnedValue could not be parsed, it will go to catch and continue.
-                if(buffer > -1){
-                    //Means we successfully parsed day.
-                    if(day != -1 ) day = buffer
-                    buffer = parseMonth(it)
-                    if(buffer > -1){
-                        if(month != -1 ) month = buffer
-                        buffer = parseYear(it)
-                        if(buffer > -1){
-                            if(year != -1 ) year = buffer
-                            buffer = parseHour(it)
-                            if(buffer > -1){
-                                if(hour != -1 ) hour = buffer
-                                buffer = parseMinute(it)
-                                if(buffer > -1){
-                                    if(minute != -1 ) minute = buffer
-                                }
-                            }
-                        }
-                    }
-                }
             }
             catch (e : NumberFormatException){
                 return@forEach //This is the same as continue.
             }
         }
     }
+    @Throws(NumberFormatException::class)
     private fun parseDay(string : String) : Int{
         //TODO: Always control if it is max 2 character number and between 1-30
         try{
@@ -65,8 +47,9 @@ class OcrHandler(private var graphicsList : Set<OcrGraphic>){
             throw NumberFormatException(e.message) //It is like volleyball, we redirected our try catch.....
         }
     }
+    @Throws(NumberFormatException::class)
     private fun parseMonth(string : String) : Int{
-        monthList!!.forEachIndexed { index, s ->
+        monthList.forEachIndexed { index, s ->
             if(s.toLowerCase() == string.toLowerCase()){
                 return index //If we find month, how lucky. Just fork it over.
             }
@@ -78,6 +61,7 @@ class OcrHandler(private var graphicsList : Set<OcrGraphic>){
             throw NumberFormatException(e.message) //It is like volleyball, we redirected our try catch.....
         }
     }
+    @Throws(NumberFormatException::class)
     private fun parseYear(string : String) : Int{
         try{
             return parseNumbers(string,4,4,1000,9999)
@@ -86,6 +70,7 @@ class OcrHandler(private var graphicsList : Set<OcrGraphic>){
             throw NumberFormatException(e.message) //It is like volleyball, we redirected our try catch.....
         }
     }
+    @Throws(NumberFormatException::class)
     private fun parseHour(string : String) : Int{
         try{
             return parseNumbers(string,1,2,0,60)
@@ -94,6 +79,7 @@ class OcrHandler(private var graphicsList : Set<OcrGraphic>){
             throw NumberFormatException(e.message) //It is like volleyball, we redirected our try catch.....
         }
     }
+    @Throws(NumberFormatException::class)
     private fun parseMinute(string : String) : Int{
         try{
             return parseNumbers(string,1,2,0,60)
