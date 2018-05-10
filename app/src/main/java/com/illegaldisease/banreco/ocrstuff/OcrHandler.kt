@@ -51,11 +51,11 @@ class OcrHandler(private var graphicsList : Set<OcrGraphic>){
         stringList.forEach {
             try {
                 when {
-                    day == -1 -> day = parseDay(it)
-                    month == -1 -> month = parseMonth(it)
-                    year == -1 -> year = parseYear(it)
-                    hour == -1 -> hour = parseHour(it)
-                    minute == -1 -> minute = parseMinute(it)
+                    day == -1 -> { day = parseDay(it); return@forEach}
+                    month == -1 -> { month = parseMonth(it) ; return@forEach}
+                    year == -1 -> { year = parseYear(it) ; return@forEach}
+                    hour == -1 -> { hour = parseHour(it) ; return@forEach}
+                    minute == -1 -> { minute = parseMinute(it) ; return@forEach}
                 }
                 //If returnedValue could not be parsed, it will go to catch and continue.
             }
