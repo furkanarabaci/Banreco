@@ -35,9 +35,12 @@
     <string name="alertdialogclearcache">CLEAR CACHE</string>
     <string name="alertdialogrestart">RELOGIN</string>
 
+    <string name="evensuccessfullyadded">Event is successfully added</string>
+    <string name="eventaddingfailed">Could not add event, please try again.</string>
+
     <string name="devicenotsupportedtitle">Device not supported</string>
     <string name="devicenotsupportedmessage">Sorry about that, but your current device does not support Google Vision API.
-    Contact Google for further information. Press OK to close application. If you wanna try anyways, click other button.
+    Contact Google for further information. Press OK to close application. If you want to try anyways, click other button.
     I am not responsible for crashes if you tap I WANNA TRY and i will ignore your reviews or issues.</string>
 
     <!-- Strings related to Settings -->

@@ -27,6 +27,7 @@ class EventHandler { //Don't construct this object more than once. PLEASE.
     companion object {
         val futureEvents : MutableList<EventsRemastered> = ArrayList()
         val pastEvents : MutableList<EventsRemastered> = ArrayList()
+        lateinit var lastImageBitmap : Bitmap
 
         private fun addEventToLists(context: Context, currentModel : EventModel){
             //This function will separate entries using current date ( past or future ) and place it to Lists.

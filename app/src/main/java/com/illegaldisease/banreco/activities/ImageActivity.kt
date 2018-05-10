@@ -1,13 +1,22 @@
 package com.illegaldisease.banreco.activities
 
+import android.graphics.Bitmap
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
+import android.support.design.widget.Snackbar
 import android.widget.ImageView
+
 import com.illegaldisease.banreco.R
 import com.illegaldisease.banreco.databaserelated.EventHandler
+import com.illegaldisease.banreco.databaserelated.EventModel
+
 import com.wdullaer.materialdatetimepicker.date.DatePickerDialog
 import com.wdullaer.materialdatetimepicker.time.TimePickerDialog
+
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
 import java.util.*
 
 class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,DatePickerDialog.OnDateSetListener {
@@ -17,6 +26,7 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
     private lateinit var setDateButton : FloatingActionButton
     private lateinit var setTimeButton : FloatingActionButton
     private lateinit var doneButton : FloatingActionButton
+    private var bitmapDate : Int = 0
 
     private var lastEventDate : Calendar = GregorianCalendar.getInstance(TimeZone.getDefault())
 
@@ -25,10 +35,10 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
         setContentView(R.layout.activity_image)
         imageView = findViewById(R.id.activityImage)
 
-        val bitmapDate = intent.getSerializableExtra("Bitmap") as Int
+        bitmapDate = intent.getSerializableExtra("Bitmap") as Int
         val willShowButtons = intent.getSerializableExtra("willshow") as Boolean
 
-        imageView.setImageBitmap(EventHandler.convertToBitmap(this,bitmapDate))
+        imageView.setImageBitmap(EventHandler.lastImageBitmap)
         if(willShowButtons) buttonActions()
     }
     private fun buttonActions(){
@@ -43,10 +53,22 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
         setTimeButton.show()
         doneButton.show()
 
-        trashButton.setOnClickListener { /*TODO: Get rid of image here */ }
+        trashButton.setOnClickListener {
+            finish() //It is very similar to pressing back button.
+        }
         setDateButton.setOnClickListener { pickDate() }
         setTimeButton.setOnClickListener { pickTime() }
-        doneButton.setOnClickListener { /*TODO: Add to database here */ }
+        doneButton.setOnClickListener {
+            try{
+                saveToFile(EventHandler.lastImageBitmap,bitmapDate.toLong())
+                EventHandler.addEvent(this, EventModel(0,bitmapDate))
+                Snackbar.make(window.decorView,getString(R.string.evensuccessfullyadded),Snackbar.LENGTH_LONG)
+            }
+            catch (e : Exception){
+                Snackbar.make(window.decorView,getString(R.string.eventaddingfailed),Snackbar.LENGTH_LONG)
+            }
+
+        }
     }
     private fun pickTime(){
         val tpd = TimePickerDialog.newInstance(
@@ -76,5 +98,22 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
         lastEventDate.set(Calendar.HOUR_OF_DAY, hourOfDay)
         lastEventDate.set(Calendar.MINUTE, minute)
         lastEventDate.set(Calendar.SECOND, second)
+    }
+
+    private fun saveToFile(bitmap: Bitmap, date : Long){
+        val filePath = File(filesDir.toURI())
+
+        val imageFile = File(filePath.absolutePath
+                + File.separator
+                + date
+                + ".jpeg")
+        imageFile.createNewFile()
+        val ostream = ByteArrayOutputStream()
+        // save image into gallery
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, ostream)
+        FileOutputStream(imageFile).apply {
+            write(ostream.toByteArray())
+            close()
+        }
     }
 }

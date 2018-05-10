@@ -29,6 +29,7 @@ import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.vision.text.TextRecognizer
 
 import com.illegaldisease.banreco.R
+import com.illegaldisease.banreco.activities.ImageActivity
 import com.illegaldisease.banreco.databaserelated.EventHandler
 import com.illegaldisease.banreco.databaserelated.EventModel
 import com.illegaldisease.banreco.ocrstuff.OcrDetectorProcessor
@@ -126,7 +127,6 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
         mPreview.release()
     }
 
-    //
     override fun onAttach(activity : Context){
         fragmentCallBack = activity as MyFragmentCallback
         super.onAttach(activity)
@@ -312,23 +312,9 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
                 val rotatedBitmap = Bitmap.createBitmap(loadedImage, 0, 0,
                         loadedImage.width, loadedImage.height,
                         rotateMatrix, false)
-                val filePath = File(activity!!.filesDir.toURI())
                 val date = System.currentTimeMillis() / 1000 //TODO:Test purposes. Change it later.
                 //val date = lastEventDate!!.timeInMillis / 1000
-                imageFile = File(filePath.absolutePath
-                        + File.separator
-                        + date
-                        + ".jpeg")
-                imageFile.createNewFile()
-                val ostream = ByteArrayOutputStream()
-                // save image into gallery
-                rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, ostream)
-                FileOutputStream(imageFile).apply {
-                    write(ostream.toByteArray())
-                    close()
-                }
-                EventHandler.addEvent(activity!!, EventModel(0,date.toInt()))
-
+                EventHandler.lastImageBitmap = rotatedBitmap //Pass it to our static class.
                 isCameraClicked = false //Make it clickable again.
             } catch (e : Exception) {
                 e.printStackTrace()
@@ -336,6 +322,19 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
         })
     }
 
+    private fun openImageActivity(date : Int){
+        try{
+            val intent = Intent(context, ImageActivity:: class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                putExtra("Bitmap",date)
+                putExtra("willshow",true)//We will be editing dates and be done with it.
+            }
+            context!!.startActivity(intent)
+        }
+        catch (er : NullPointerException){
+            Log.e("onclicklistener",Log.getStackTraceString(er))
+        }
+    }
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         if (requestCode != RC_HANDLE_CAMERA_PERM) {
             Log.d(CameraFragment.TAG, "Got unexpected permission result: $requestCode")
