@@ -84,7 +84,7 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
         if(isConnected){
             progressBar.visibility = ProgressBar.INVISIBLE
             fragmentCallBack.drawBar()
-            restartCameraSource()
+            if(checkCameraPermission()) restartCameraSource()
         }
         else{
             Snackbar.make(activity!!.window.decorView.rootView,"Waiting for internet connection", Snackbar.LENGTH_LONG).show()
@@ -95,6 +95,9 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mInternetAvailabilityChecker = InternetAvailabilityChecker.getInstance()
         mInternetAvailabilityChecker.addInternetConnectivityListener(this)
+        if(!checkCameraPermission()){
+
+        }
         return inflater.inflate(R.layout.fragment_camera, container, false)
     }
 
@@ -106,17 +109,15 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
         mInternetAvailabilityChecker = InternetAvailabilityChecker.getInstance()
         progressBar = view.findViewById(R.id.indeterminateBar)
 
-        initializeCameraButton()
-        initializeFlashButton()
-
         warnUserAboutLibraries() //Only creates, does not show it.
     }
     override fun onStart() {
         super.onStart()
+        if(!checkCameraPermission()) cameraPermissionDeniedDialog()
     }
     override fun onResume() {
         super.onResume()
-        restartCameraSource()
+        if(checkCameraPermission()) restartCameraSource()
     }
     override fun onPause() {
         super.onPause()
@@ -204,13 +205,17 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
         alertDialog = alertBuilder.create() //Show or destroy it whenever you want.
     }
 
+    private fun checkCameraPermission() : Boolean{
+        return ActivityCompat.checkSelfPermission(activity!!.baseContext, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+    }
     private fun buildCamera(){
         // read parameters from the intent used to launch the activity.
         // Check for the camera permission before accessing the camera.  If the
         // permission is not granted yet, request permission.
-        val rc = ActivityCompat.checkSelfPermission(activity!!.baseContext, Manifest.permission.CAMERA)
-        if (rc == PackageManager.PERMISSION_GRANTED) {
+        if (checkCameraPermission()) {
             createCameraSource()
+            initializeCameraButton()
+            initializeFlashButton()
         } else {
             requestCameraPermission()
         }
@@ -230,7 +235,7 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
             ActivityCompat.requestPermissions(activity!!, permissions,
                     RC_HANDLE_CAMERA_PERM)
         }
-
+        //TODO: Handle permamently denied permissions.
         Snackbar.make(mGraphicOverlay, R.string.permission_camera_rationale,
                 Snackbar.LENGTH_INDEFINITE)
                 .setAction(R.string.ok, listener)
@@ -357,16 +362,25 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
         }
 
         Log.e(CameraFragment.TAG, """Permission not granted: results len = ${grantResults.size} Result code = ${if (grantResults.isNotEmpty()) grantResults[0] else "(empty)"}""")
+        cameraPermissionDeniedDialog()
 
+    }
+    private fun cameraPermissionDeniedDialog(){
         val listener = DialogInterface.OnClickListener { _, _ -> activity!!.finish() }
-
+        val grantListener = DialogInterface.OnClickListener { _, _ ->
+            val intent = Intent()
+            intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+            val uri = Uri.fromParts("package",activity!!.packageName, null)
+            intent.data = uri
+            context!!.startActivity(intent)
+        }
         val builder = AlertDialog.Builder(activity!!)
-        builder.setTitle("Multitracker sample")
+        builder.setTitle("Permission is not granted for camera.")
                 .setMessage(R.string.no_camera_permission)
                 .setPositiveButton(R.string.ok, listener)
+                .setNegativeButton("Grant", grantListener)
                 .show()
     }
-
     interface MyFragmentCallback {
         fun drawBar()
     }

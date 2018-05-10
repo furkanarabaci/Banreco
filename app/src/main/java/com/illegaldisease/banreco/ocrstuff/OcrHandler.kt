@@ -35,6 +35,14 @@ class OcrHandler(private var graphicsList : Set<OcrGraphic>){
     init{
         splitThings()
     }
+    private fun checkMonthString(string : String) : Int{
+        monthList.forEachIndexed { index, s ->
+            if(s.toLowerCase() == string.toLowerCase()){
+                return index //If we find month, how lucky. Just fork it over.
+            }
+        }
+        return -1
+    }
     private fun splitThings(){
         //Try to add more regex with trial and error.
         val pattern : Pattern = Pattern.compile("[0-9]+|[A-Za-z]+")
@@ -52,10 +60,11 @@ class OcrHandler(private var graphicsList : Set<OcrGraphic>){
             try {
                 when {
                     day == -1 -> { day = parseDay(it); return@forEach}
+                    month == -1 || checkMonthString(it) > -1 -> { month = parseMonth(it) ; return@forEach}
                     year == -1 -> { year = parseYear(it) ; return@forEach}
                     hour == -1 -> { hour = parseHour(it) ; return@forEach}
                     minute == -1 -> { minute = parseMinute(it) ; return@forEach}
-                    month == -1 -> { month = parseMonth(it) ; return@forEach}
+
                 }
                 //If returnedValue could not be parsed, it will go to catch and continue.
             }
@@ -76,11 +85,6 @@ class OcrHandler(private var graphicsList : Set<OcrGraphic>){
     }
     @Throws(NumberFormatException::class)
     private fun parseMonth(string : String) : Int{
-        monthList.forEachIndexed { index, s ->
-            if(s.toLowerCase() == string.toLowerCase()){
-                return index //If we find month, how lucky. Just fork it over.
-            }
-        }
         try{
             return parseNumbers(string,1,2,1,12)
         }
