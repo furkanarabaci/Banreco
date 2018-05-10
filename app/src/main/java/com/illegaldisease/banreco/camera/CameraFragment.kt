@@ -235,7 +235,6 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
             ActivityCompat.requestPermissions(activity!!, permissions,
                     RC_HANDLE_CAMERA_PERM)
         }
-        //TODO: Handle permamently denied permissions.
         Snackbar.make(mGraphicOverlay, R.string.permission_camera_rationale,
                 Snackbar.LENGTH_INDEFINITE)
                 .setAction(R.string.ok, listener)

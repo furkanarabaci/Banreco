@@ -27,9 +27,11 @@ import java.text.SimpleDateFormat
 import java.util.*
 import android.app.NotificationManager
 import android.app.NotificationChannel
+import android.app.PendingIntent
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.DialogInterface
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Matrix
 import android.os.Build
@@ -37,6 +39,7 @@ import android.provider.CalendarContract
 import android.provider.CalendarContract.Events.*
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
+import com.illegaldisease.banreco.camera.CameraActivity
 
 
 class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,DatePickerDialog.OnDateSetListener {
@@ -190,8 +193,10 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
         }
     }
     private fun createNotification(){
-        // Create the NotificationChannel, but only on API 26+ because
-        // the NotificationChannel class is new and not in the support library
+        //TODO: Implement this.
+        val intent = Intent(this, ImageActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        val pendingIntent = PendingIntent.getActivity(this, 0, intent, 0)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = "banrecoApp"
             val description = "You have one event"
@@ -209,6 +214,8 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
                     .setContentTitle("You have one event")
                     .setContentText("test") //TODO: Change later.
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setContentIntent(pendingIntent)
+                    .setAutoCancel(true)
         }
     }
     private fun addToGoogleCalendar(){

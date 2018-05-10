@@ -75,7 +75,7 @@ class OcrHandler(private var graphicsList : Set<OcrGraphic>){
     }
     @Throws(NumberFormatException::class)
     private fun parseDay(string : String) : Int{
-        //TODO: Always control if it is max 2 character number and between 1-30
+        //Always control if it is max 2 character number and between 1-30
         try{
             return parseNumbers(string,1,2,1,30)
         }
