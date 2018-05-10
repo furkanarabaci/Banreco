@@ -21,6 +21,8 @@ import android.util.AttributeSet;
 import android.view.View;
 
 import com.google.android.gms.vision.CameraSource;
+import com.illegaldisease.banreco.ocrstuff.OcrGraphic;
+import com.illegaldisease.banreco.ocrstuff.OcrHandler;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -195,7 +197,7 @@ public class GraphicOverlay<T extends GraphicOverlay.Graphic> extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
+        //new OcrHandler((Set<OcrGraphic>)mGraphics).tryToParse(); //test.
         synchronized (mLock) {
             if ((mPreviewWidth != 0) && (mPreviewHeight != 0)) {
                 mWidthScaleFactor = (float) canvas.getWidth() / (float) mPreviewWidth;

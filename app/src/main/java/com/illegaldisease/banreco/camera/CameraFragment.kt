@@ -34,9 +34,11 @@ import com.illegaldisease.banreco.databaserelated.EventHandler
 import com.illegaldisease.banreco.databaserelated.EventModel
 import com.illegaldisease.banreco.ocrstuff.OcrDetectorProcessor
 import com.illegaldisease.banreco.ocrstuff.OcrGraphic
+import com.illegaldisease.banreco.ocrstuff.OcrHandler
 
 import com.treebo.internetavailabilitychecker.InternetAvailabilityChecker
 import com.treebo.internetavailabilitychecker.InternetConnectivityListener
+import org.jetbrains.anko.doAsync
 
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -81,7 +83,8 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
     override fun onInternetConnectivityChanged(isConnected: Boolean) {
         if(isConnected){
             progressBar.visibility = ProgressBar.INVISIBLE
-            buildCamera()
+            fragmentCallBack.drawBar()
+            restartCameraSource()
         }
         else{
             Snackbar.make(activity!!.window.decorView.rootView,"Waiting for internet connection", Snackbar.LENGTH_LONG).show()
@@ -107,15 +110,13 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
         initializeFlashButton()
 
         warnUserAboutLibraries() //Only creates, does not show it.
-        buildCamera()
     }
     override fun onStart() {
         super.onStart()
-        fragmentCallBack.drawBar()
     }
     override fun onResume() {
         super.onResume()
-        startCameraSource()
+        restartCameraSource()
     }
     override fun onPause() {
         super.onPause()
@@ -166,7 +167,7 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
         photoButton = view!!.findViewById(R.id.fab_take_photo)
         photoButton.setOnClickListener {
             if(!isCameraClicked) {
-                takePicture()
+                takePicture() //This also redirects to the activity.
                 isCameraClicked = true
             }
         }
@@ -302,8 +303,8 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
         isFlashClicked = false
     }
     private fun takePicture(){
+        tryToParseDate()
         mCameraSource.takePicture(null, CameraSource.PictureCallback {
-            val imageFile : File
             try {
                 // convert byte array into bitmap
                 val loadedImage : Bitmap = BitmapFactory.decodeByteArray(it, 0, it.size)
@@ -312,21 +313,28 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
                 val rotatedBitmap = Bitmap.createBitmap(loadedImage, 0, 0,
                         loadedImage.width, loadedImage.height,
                         rotateMatrix, false)
-                val date = System.currentTimeMillis() / 1000 //TODO:Test purposes. Change it later.
-                //val date = lastEventDate!!.timeInMillis / 1000
                 EventHandler.lastImageBitmap = rotatedBitmap //Pass it to our static class.
                 isCameraClicked = false //Make it clickable again.
+                openImageActivity()
             } catch (e : Exception) {
                 e.printStackTrace()
             }
         })
     }
 
-    private fun openImageActivity(date : Int){
+    private fun tryToParseDate(){
+        //No need to callback, this will be over under 10 miliseconds, but still no need to make program wait more.
+        doAsync {
+            val ocrHandler = OcrHandler(mGraphicOverlay.mGraphics)
+            ocrHandler.tryToParse() //We start to parse now so that it will have immediate results when user went to other activity.
+        }
+
+    }
+
+    private fun openImageActivity(){
         try{
             val intent = Intent(context, ImageActivity:: class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                putExtra("Bitmap",date)
                 putExtra("willshow",true)//We will be editing dates and be done with it.
             }
             context!!.startActivity(intent)

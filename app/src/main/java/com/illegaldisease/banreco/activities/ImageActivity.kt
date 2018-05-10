@@ -5,11 +5,15 @@ import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.Snackbar
+import android.util.Log
+import android.view.View
 import android.widget.ImageView
+import android.widget.TextView
 
 import com.illegaldisease.banreco.R
 import com.illegaldisease.banreco.databaserelated.EventHandler
 import com.illegaldisease.banreco.databaserelated.EventModel
+import com.illegaldisease.banreco.ocrstuff.OcrHandler
 
 import com.wdullaer.materialdatetimepicker.date.DatePickerDialog
 import com.wdullaer.materialdatetimepicker.time.TimePickerDialog
@@ -17,6 +21,9 @@ import com.wdullaer.materialdatetimepicker.time.TimePickerDialog
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
+import java.text.ParseException
+import java.text.SimpleDateFormat
 import java.util.*
 
 class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,DatePickerDialog.OnDateSetListener {
@@ -26,7 +33,7 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
     private lateinit var setDateButton : FloatingActionButton
     private lateinit var setTimeButton : FloatingActionButton
     private lateinit var doneButton : FloatingActionButton
-    private var bitmapDate : Int = 0
+    private lateinit var dateTextView : TextView
 
     private var lastEventDate : Calendar = GregorianCalendar.getInstance(TimeZone.getDefault())
 
@@ -35,11 +42,21 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
         setContentView(R.layout.activity_image)
         imageView = findViewById(R.id.activityImage)
 
-        bitmapDate = intent.getSerializableExtra("Bitmap") as Int
         val willShowButtons = intent.getSerializableExtra("willshow") as Boolean
 
-        imageView.setImageBitmap(EventHandler.lastImageBitmap)
-        if(willShowButtons) buttonActions()
+        if(willShowButtons){ //If we reached this by clicking photo button, go here.
+            buttonActions()
+            imageView.setImageBitmap(EventHandler.lastImageBitmap)
+        }
+        else{ //If we reached this by clicking photo on logs or events, go here.
+            val bitmapDate = intent.getSerializableExtra("Bitmap") as Int
+            imageView.setImageBitmap(EventHandler.convertToBitmap(this,bitmapDate))
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        tryAutomaticMethod()
     }
     private fun buttonActions(){
         //Just for better usage, i put them here.
@@ -47,11 +64,13 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
         setDateButton = findViewById(R.id.imageSetDate)
         setTimeButton = findViewById(R.id.imageSetTime)
         doneButton = findViewById(R.id.imageDone)
+        dateTextView = findViewById(R.id.imageTextDate) //Shhhh. You are not a button, but this is a perfect place for you.
 
         trashButton.show()
         setDateButton.show()
         setTimeButton.show()
         doneButton.show()
+        dateTextView.visibility = View.VISIBLE //Show yourself, but still be hidden.....
 
         trashButton.setOnClickListener {
             finish() //It is very similar to pressing back button.
@@ -60,8 +79,8 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
         setTimeButton.setOnClickListener { pickTime() }
         doneButton.setOnClickListener {
             try{
-                saveToFile(EventHandler.lastImageBitmap,bitmapDate.toLong())
-                EventHandler.addEvent(this, EventModel(0,bitmapDate))
+                saveToFile(EventHandler.lastImageBitmap,lastEventDate.timeInMillis / 1000)
+                EventHandler.addEvent(this, EventModel(0,(lastEventDate.timeInMillis / 1000).toInt()))
                 Snackbar.make(window.decorView,getString(R.string.evensuccessfullyadded),Snackbar.LENGTH_LONG)
             }
             catch (e : Exception){
@@ -70,6 +89,7 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
 
         }
     }
+
     private fun pickTime(){
         val tpd = TimePickerDialog.newInstance(
                 this@ImageActivity,
@@ -100,20 +120,43 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
         lastEventDate.set(Calendar.SECOND, second)
     }
 
-    private fun saveToFile(bitmap: Bitmap, date : Long){
+    @Throws(IOException::class)
+    private fun saveToFile(bitmap: Bitmap, date : Long) {
+        if (checkIfFileExists(date.toInt())) {
+            //There is already an event that exact time.
+            //TODO: Warn user about this.
+        }
         val filePath = File(filesDir.toURI())
-
         val imageFile = File(filePath.absolutePath
                 + File.separator
                 + date
                 + ".jpeg")
         imageFile.createNewFile()
-        val ostream = ByteArrayOutputStream()
+        val outStream = ByteArrayOutputStream()
         // save image into gallery
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, ostream)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outStream)
         FileOutputStream(imageFile).apply {
-            write(ostream.toByteArray())
+            write(outStream.toByteArray())
             close()
+        }
+    }
+    private fun checkIfFileExists(date : Int) : Boolean{
+        //Call this BEFORE saving to file.
+        val currentURI = EventHandler.parsePhotoUri(date,this.filesDir)
+        return File(currentURI.toString()).exists()
+    }
+    private fun tryAutomaticMethod(){
+        //We will use the data we already created in CameraFragment.
+        val parseToTry = OcrHandler.getRenderedDate() //day,month(0-11),year,hour,minute
+        val format = SimpleDateFormat("dd MM yyyy HH:mm")
+        try{
+            val date = format.parse(parseToTry)
+            dateTextView.text = format.format(date)
+        }
+        catch (e : ParseException){
+            //Means we failed. Don't raise errors, only tell the user that we failed miserably.
+            Log.d("Whatever",parseToTry)
+            dateTextView.text = getString(R.string.dateparsefailed)
         }
     }
 }

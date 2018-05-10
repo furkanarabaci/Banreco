@@ -1,28 +1,53 @@
 package com.illegaldisease.banreco.ocrstuff
 
+import android.util.Log
 import java.util.*
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+import kotlin.collections.ArrayList
 
 class OcrHandler(private var graphicsList : Set<OcrGraphic>){
-    private val stringList : MutableList<String> = ArrayList()
+    companion object {
+        val stringList : MutableList<String> = ArrayList()
+        var day : Int = -1 //1-30
+        var month : Int = -1 //0 = january, 11 = december etc..
+        var year : Int = -1 //4 numbered character.
+        var hour : Int = -1 //1-60
+        var minute : Int = -1 //1-60
+        @JvmStatic
+        fun getRenderedDate() : String{ //Don't call this unless you called tryToParse() somewhere else before.
+            var string = ""
+            string += if(day < 10) "0$day" else "$day"
+            string += " "
+            string += if(month < 10) "0$month" else "$month"
+            string += " "
+            string += "$year" //Should always be 4 characters, otherwise -1.
+            string += " "
+            string += if(hour < 10) "0$hour" else "$hour"
+            string += ":"
+            string += if(minute < 10) "0$minute" else "$minute"
+            return string
+        }
+    }
+
     private val monthList : List<String> = ArrayList(listOf("Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"))
-    private var day : Int = -1 //1-30
-    private var month : Int = -1 //0 = january, 11 = december etc..
-    private var year : Int = -1 //4 numbered character.
-    private var hour : Int = -1 //1-60
-    private var minute : Int = -1 //1-60
+
     init{
         splitThings()
     }
     private fun splitThings(){
         //Try to add more regex with trial and error.
+        val pattern : Pattern = Pattern.compile("[0-9]+|[A-Za-z]+")
         graphicsList.forEach  {
-            it.textBlock.toString().split("\\s+ | -+ | /+").forEach {
-                stringList.add(it) //Regex will probably not work.
+            val matcher : Matcher = pattern.matcher(it.textBlock.value)
+            while(matcher.find()){
+                stringList.add(matcher.group())
+                Log.d("whatever",matcher.group())
             }
 
         }
     }
-    private fun tryToParse(){ //Very ugly code, i will refactor later. aand other hilarious jokes you tell on yourself...
+    fun tryToParse(){ //Very ugly code, i will refactor later. aand other hilarious jokes you tell on yourself...
         stringList.forEach {
             try {
                 if(day == -1) day = parseDay(it)
@@ -88,11 +113,7 @@ class OcrHandler(private var graphicsList : Set<OcrGraphic>){
             throw NumberFormatException(e.message) //It is like volleyball, we redirected our try catch.....
         }
     }
-    fun getRenderedDate(){ //Don't call this function too much, the load is high.
-        tryToParse()
-        val values : MutableList<Int?> = ArrayList(listOf(day,month,year,hour,minute)).toMutableList()
 
-    }
 
     /**
      * Returns -1 if requirements are not met. Throws exception if content is not a number at all.

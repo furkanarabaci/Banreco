@@ -43,6 +43,7 @@
     Contact Google for further information. Press OK to close application. If you want to try anyways, click other button.
     I am not responsible for crashes if you tap I WANNA TRY and i will ignore your reviews or issues.</string>
 
+    <string name="dateparsefailed">We could not detect the time.</string>
     <!-- Strings related to Settings -->
 
     <!-- Example General settings -->

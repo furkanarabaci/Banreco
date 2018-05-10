@@ -143,7 +143,6 @@ class CameraActivity : AppCompatActivity(), CameraFragment.MyFragmentCallback {
                 }
             }
         }
-        //restartCameraSource() //There is some mysterious bug about drawer, so i restart every time.
     }
     private fun openCalendar(openTime : Long){
         val builder = CalendarContract.CONTENT_URI.buildUpon()
