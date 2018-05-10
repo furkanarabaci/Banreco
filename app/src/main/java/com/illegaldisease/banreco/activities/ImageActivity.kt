@@ -31,6 +31,7 @@ import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.DialogInterface
 import android.content.pm.PackageManager
+import android.graphics.Matrix
 import android.os.Build
 import android.provider.CalendarContract
 import android.provider.CalendarContract.Events.*
@@ -40,7 +41,7 @@ import android.support.v4.content.ContextCompat
 
 class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,DatePickerDialog.OnDateSetListener {
     companion object {
-        private const val MY_PERMISSIONS_REQUEST_WRITE_CALENDAR = 1
+        private const val MY_PERMISSIONS_REQUEST_WRITE_CALENDAR = 8
     }
     private lateinit var imageView : ImageView
     private lateinit var trashButton : FloatingActionButton
@@ -67,17 +68,20 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
         }
         else{ //If we reached this by clicking photo on logs or events, go here.
             val bitmapDate = intent.getSerializableExtra("Bitmap") as Int
-            imageView.setImageBitmap(EventHandler.convertToBitmap(this,bitmapDate))
+            imageView.setImageBitmap(EventHandler.convertToBitmap(this,bitmapDate).rotate(90F))
         }
     }
-
+    private fun Bitmap.rotate(degrees: Float): Bitmap {
+        val matrix = Matrix().apply { postRotate(degrees) }
+        return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
+    }
     override fun onDestroy() {
         super.onDestroy()
         OcrHandler.stringList.clear()
     }
     override fun onStart() {
         super.onStart()
-        if(willShowButtons)tryAutomaticMethod()
+        tryAutomaticMethod()
     }
     private fun buttonActions(){
         //Just for better usage, i put them here.
@@ -182,7 +186,7 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
         catch (e : ParseException){
             //Means we failed. Don't raise errors, only tell the user that we failed miserably.
             Log.d("Whatever",parseToTry)
-            dateTextView.text = getString(R.string.dateparsefailed)
+            if(willShowButtons) dateTextView.text = getString(R.string.dateparsefailed)
         }
     }
     private fun createNotification(){
@@ -225,7 +229,7 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
         }
         else{
             ActivityCompat.requestPermissions(this,
-                    arrayOf(Manifest.permission.READ_CONTACTS),
+                    arrayOf(Manifest.permission.WRITE_CALENDAR),
                     MY_PERMISSIONS_REQUEST_WRITE_CALENDAR)
         }
     }
