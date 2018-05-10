@@ -48,6 +48,7 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
     private lateinit var setTimeButton : FloatingActionButton
     private lateinit var doneButton : FloatingActionButton
     private lateinit var dateTextView : TextView
+    private var willShowButtons : Boolean = false
 
     private val format = SimpleDateFormat("dd MM yyyy HH:mm")
 
@@ -58,7 +59,7 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
         setContentView(R.layout.activity_image)
         imageView = findViewById(R.id.activityImage)
 
-        val willShowButtons = intent.getSerializableExtra("willshow") as Boolean
+        willShowButtons = intent.getSerializableExtra("willshow") as Boolean
 
         if(willShowButtons){ //If we reached this by clicking photo button, go here.
             buttonActions()
@@ -76,7 +77,7 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
     }
     override fun onStart() {
         super.onStart()
-        tryAutomaticMethod()
+        if(willShowButtons)tryAutomaticMethod()
     }
     private fun buttonActions(){
         //Just for better usage, i put them here.
