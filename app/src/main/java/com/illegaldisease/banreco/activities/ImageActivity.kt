@@ -17,11 +17,8 @@ import com.illegaldisease.banreco.ocrstuff.OcrHandler
 
 import com.wdullaer.materialdatetimepicker.date.DatePickerDialog
 import com.wdullaer.materialdatetimepicker.time.TimePickerDialog
+import java.io.*
 
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
@@ -34,6 +31,8 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
     private lateinit var setTimeButton : FloatingActionButton
     private lateinit var doneButton : FloatingActionButton
     private lateinit var dateTextView : TextView
+
+    private val format = SimpleDateFormat("dd MM yyyy HH:mm")
 
     private var lastEventDate : Calendar = GregorianCalendar.getInstance(TimeZone.getDefault())
 
@@ -54,6 +53,10 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        OcrHandler.stringList.clear()
+    }
     override fun onStart() {
         super.onStart()
         tryAutomaticMethod()
@@ -74,17 +77,19 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
 
         trashButton.setOnClickListener {
             finish() //It is very similar to pressing back button.
+
         }
         setDateButton.setOnClickListener { pickDate() }
         setTimeButton.setOnClickListener { pickTime() }
         doneButton.setOnClickListener {
             try{
-                saveToFile(EventHandler.lastImageBitmap,lastEventDate.timeInMillis / 1000)
+                //TODO: Properly check if user set the time. Otherwise current date will be entered.
+                saveToFile(EventHandler.lastImageBitmap,lastEventDate.timeInMillis / 1000) //It takes current time if we could not detect the time.
                 EventHandler.addEvent(this, EventModel(0,(lastEventDate.timeInMillis / 1000).toInt()))
-                Snackbar.make(window.decorView,getString(R.string.evensuccessfullyadded),Snackbar.LENGTH_LONG)
+                finish()
             }
             catch (e : Exception){
-                Snackbar.make(window.decorView,getString(R.string.eventaddingfailed),Snackbar.LENGTH_LONG)
+                Snackbar.make(window.decorView,getString(R.string.eventaddingfailed),Snackbar.LENGTH_LONG).show()
             }
 
         }
@@ -113,11 +118,13 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
         lastEventDate.set(Calendar.MONTH, monthOfYear)
         lastEventDate.set(Calendar.YEAR, year)
         lastEventDate.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+        dateTextView.text = format.format(lastEventDate.time) //Always update things beforehand.
     }
     override fun onTimeSet(view: TimePickerDialog?, hourOfDay: Int, minute: Int, second: Int) {
         lastEventDate.set(Calendar.HOUR_OF_DAY, hourOfDay)
         lastEventDate.set(Calendar.MINUTE, minute)
         lastEventDate.set(Calendar.SECOND, second)
+        dateTextView.text = format.format(lastEventDate.time)
     }
 
     @Throws(IOException::class)
@@ -148,10 +155,10 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
     private fun tryAutomaticMethod(){
         //We will use the data we already created in CameraFragment.
         val parseToTry = OcrHandler.getRenderedDate() //day,month(0-11),year,hour,minute
-        val format = SimpleDateFormat("dd MM yyyy HH:mm")
         try{
             val date = format.parse(parseToTry)
             dateTextView.text = format.format(date)
+            lastEventDate.time = date //Make it automatic.
         }
         catch (e : ParseException){
             //Means we failed. Don't raise errors, only tell the user that we failed miserably.

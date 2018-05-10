@@ -130,11 +130,8 @@ class EventHandler { //Don't construct this object more than once. PLEASE.
         }
         @Throws(FileNotFoundException::class)
         fun parsePhotoUri(date : Int, filesDir : File) : URI{
-            val parsedURI = URI("file://${filesDir.absolutePath}/$date.jpeg")
-            if(!File(parsedURI).exists()){
-                throw FileNotFoundException("File not found. Path : $parsedURI")
-            }
-            return parsedURI
+            //It does not check if it exists or not.
+            return URI("file://${filesDir.absolutePath}/$date.jpeg")
         }
         fun convertToBitmap(context: Context, date : Int) : Bitmap {
             val photoUri = parsePhotoUri(date,context.filesDir)
