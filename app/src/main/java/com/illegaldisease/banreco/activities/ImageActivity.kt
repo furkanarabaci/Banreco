@@ -1,10 +1,13 @@
 package com.illegaldisease.banreco.activities
 
+import android.Manifest
+import android.app.AlertDialog
 import android.graphics.Bitmap
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.Snackbar
+import android.support.v4.app.NotificationCompat
 import android.util.Log
 import android.view.View
 import android.widget.ImageView
@@ -22,9 +25,23 @@ import java.io.*
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
+import android.app.NotificationManager
+import android.app.NotificationChannel
+import android.content.ContentResolver
+import android.content.ContentValues
+import android.content.DialogInterface
+import android.content.pm.PackageManager
+import android.os.Build
+import android.provider.CalendarContract
+import android.provider.CalendarContract.Events.*
+import android.support.v4.app.ActivityCompat
+import android.support.v4.content.ContextCompat
+
 
 class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,DatePickerDialog.OnDateSetListener {
-
+    companion object {
+        private const val MY_PERMISSIONS_REQUEST_WRITE_CALENDAR = 1
+    }
     private lateinit var imageView : ImageView
     private lateinit var trashButton : FloatingActionButton
     private lateinit var setDateButton : FloatingActionButton
@@ -86,6 +103,7 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
                 //TODO: Properly check if user set the time. Otherwise current date will be entered.
                 saveToFile(EventHandler.lastImageBitmap,lastEventDate.timeInMillis / 1000) //It takes current time if we could not detect the time.
                 EventHandler.addEvent(this, EventModel(0,(lastEventDate.timeInMillis / 1000).toInt()))
+                addToGoogleCalendar()
                 finish()
             }
             catch (e : Exception){
@@ -164,6 +182,76 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
             //Means we failed. Don't raise errors, only tell the user that we failed miserably.
             Log.d("Whatever",parseToTry)
             dateTextView.text = getString(R.string.dateparsefailed)
+        }
+    }
+    private fun createNotification(){
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = "banrecoApp"
+            val description = "You have one event"
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel("banreco", name, importance)
+            channel.description = description
+            // Register the channel with the system; you can't change the importance
+            // or other notification behaviors after this
+            val notificationManager = getSystemService(NotificationManager::class.java)
+            notificationManager!!.createNotificationChannel(channel)
+        }
+        else{
+            val mBuilder = NotificationCompat.Builder(this, "banreco")
+                    .setSmallIcon(R.mipmap.logo)
+                    .setContentTitle("You have one event")
+                    .setContentText("test") //TODO: Change later.
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        }
+    }
+    private fun addToGoogleCalendar(){
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_CALENDAR)
+                == PackageManager.PERMISSION_GRANTED) {
+            val calID = 3
+
+            val cr = contentResolver
+            val values = ContentValues()
+            values.put(DTSTART, lastEventDate.timeInMillis)
+            values.put(DTEND, lastEventDate.timeInMillis + 10000) //TODO: Random end date, change maybe.
+            values.put(TITLE, "BanrecoEvent")
+            values.put(DESCRIPTION, "Custom event added by banreco")
+            values.put(CALENDAR_ID, calID)
+            values.put(EVENT_TIMEZONE, "Turkey/Istanbul")
+            val uri = cr.insert(CONTENT_URI, values)
+            val eventID = uri.lastPathSegment.toLong() //TODO: Save this to database, maybe.
+        }
+        else{
+            ActivityCompat.requestPermissions(this,
+                    arrayOf(Manifest.permission.READ_CONTACTS),
+                    MY_PERMISSIONS_REQUEST_WRITE_CALENDAR)
+        }
+    }
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        when (requestCode) {
+            MY_PERMISSIONS_REQUEST_WRITE_CALENDAR-> {
+                // If request is cancelled, the result arrays are empty.
+                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                    addToGoogleCalendar()
+                } else {
+                    val builder = AlertDialog.Builder(this)
+                    builder.setTitle("Permission")
+                            .setMessage("You did not permit me to insert event to the calendar, so it will not be saved. " +
+                                    "But you can still see your events under this application.") //TODO: No hardcoded string, move these to res
+                            .setPositiveButton(R.string.ok) { it, _ ->
+                                it.dismiss()
+                            }
+                            .show()
+                }
+                return
+            }
+
+        // Add other 'when' lines to check for other
+        // permissions this app might request.
+            else -> {
+                // Ignore all other requests.
+            }
         }
     }
 }

@@ -29,6 +29,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.android.support:support-v4:27.1.1'
     implementation 'com.android.support:recyclerview-v7:27.1.1'
+    implementation 'com.github.medyo:android-about-page:1.2.4'
     ext {
         versions_supportLib = '27+'
         version_gmsLib = '15.0.1'
@@ -60,6 +61,4 @@ dependencies {
     implementation "com.google.android.gms:play-services-vision:${version_gmsLib}"
     implementation 'com.google.gms:google-services:3.1.2'
     implementation 'com.android.support.constraint:constraint-layout:1.1.0'
-
-
 }

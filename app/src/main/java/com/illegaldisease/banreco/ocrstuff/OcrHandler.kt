@@ -47,14 +47,16 @@ class OcrHandler(private var graphicsList : Set<OcrGraphic>){
 
         }
     }
-    fun tryToParse(){ //Very ugly code, i will refactor later. aand other hilarious jokes you tell on yourself...
+    fun tryToParse(){
         stringList.forEach {
             try {
-                if(day == -1) day = parseDay(it)
-                if(month == -1) month = parseMonth(it)
-                if(year == -1) year = parseYear(it)
-                if(hour == -1) hour = parseHour(it)
-                if(minute == -1) minute = parseMinute(it)
+                when {
+                    day == -1 -> day = parseDay(it)
+                    month == -1 -> month = parseMonth(it)
+                    year == -1 -> year = parseYear(it)
+                    hour == -1 -> hour = parseHour(it)
+                    minute == -1 -> minute = parseMinute(it)
+                }
                 //If returnedValue could not be parsed, it will go to catch and continue.
             }
             catch (e : NumberFormatException){
