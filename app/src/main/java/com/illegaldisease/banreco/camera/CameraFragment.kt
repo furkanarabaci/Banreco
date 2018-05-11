@@ -269,6 +269,7 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
         }
         else{
             alertDialog.dismiss()
+            progressBar.visibility = ProgressBar.INVISIBLE
             // Creates and starts the camera.  Note that this uses a higher resolution in comparison
             // to other detection examples to enable the text recognizer to detect small pieces of text.
             mCameraSource = CameraSource.Builder(activity!!.applicationContext, textRecognizer)

@@ -222,7 +222,7 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_CALENDAR)
                 == PackageManager.PERMISSION_GRANTED) {
             val calID = 3
-
+            //TODO: Change reminder settings here. Somehow.
             val cr = contentResolver
             val values = ContentValues()
             values.put(DTSTART, lastEventDate.timeInMillis)
