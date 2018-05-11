@@ -61,8 +61,6 @@ class CameraActivity : AppCompatActivity(), CameraFragment.MyFragmentCallback {
         setContentView(R.layout.activity_camera)
         profilePic = BitmapFactory.decodeResource(this@CameraActivity.resources, R.drawable.photo1)
 
-
-
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .requestId()

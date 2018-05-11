@@ -89,6 +89,7 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
         else{
             Snackbar.make(activity!!.window.decorView.rootView,"Waiting for internet connection", Snackbar.LENGTH_LONG).show()
             progressBar.visibility = ProgressBar.VISIBLE
+            fragmentCallBack.drawBar()
         }
     }
 
