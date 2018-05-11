@@ -1,5 +1,6 @@
 package com.illegaldisease.banreco.databaserelated
 
+import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
 import android.database.SQLException
@@ -9,7 +10,6 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.MediaStore
 import android.support.v4.content.FileProvider
-import android.text.format.DateFormat
 import org.jetbrains.anko.db.parseList
 import org.jetbrains.anko.db.rowParser
 import org.jetbrains.anko.db.select
@@ -22,7 +22,7 @@ import org.jetbrains.anko.uiThread
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.net.URI
-import java.util.*
+import java.text.SimpleDateFormat
 
 
 class EventHandler { //Don't construct this object more than once. PLEASE.
@@ -142,10 +142,9 @@ class EventHandler { //Don't construct this object more than once. PLEASE.
             return FileProvider.getUriForFile(context,context.packageName + ".provider",File(fileURI))
         }
 
+        @SuppressLint("SimpleDateFormat")
         fun convertTimestampToString(timestamp : Int) : String {
-            val calendar = Calendar.getInstance(Locale.ENGLISH)
-            calendar.timeInMillis = timestamp.toLong() * 1000
-            return DateFormat.format("dd-MM-yyyy HH:mm",calendar).toString()
+            return SimpleDateFormat("dd-MM-yyyy HH:mm").format(timestamp.toLong() * 1000).toString()
         }
     }
 }

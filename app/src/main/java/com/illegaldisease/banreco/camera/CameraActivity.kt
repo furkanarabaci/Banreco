@@ -31,6 +31,7 @@ import com.illegaldisease.banreco.activities.AboutActivity
 import com.illegaldisease.banreco.activities.EventsActivity
 import com.illegaldisease.banreco.activities.LogsActivity
 import com.illegaldisease.banreco.activities.SettingsActivity
+import com.illegaldisease.banreco.databaserelated.EventHandler
 
 import com.treebo.internetavailabilitychecker.InternetAvailabilityChecker
 import mehdi.sakout.aboutpage.AboutPage
@@ -60,6 +61,8 @@ class CameraActivity : AppCompatActivity(), CameraFragment.MyFragmentCallback {
         setContentView(R.layout.activity_camera)
         profilePic = BitmapFactory.decodeResource(this@CameraActivity.resources, R.drawable.photo1)
 
+
+
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .requestId()
@@ -69,6 +72,10 @@ class CameraActivity : AppCompatActivity(), CameraFragment.MyFragmentCallback {
         checkSignIn() // Attempts to login with async callbacks. be careful.
     }
 
+    override fun onStart() {
+        super.onStart()
+        EventHandler.fillOutTables(this) //Fill out tables before we open this activity.
+    }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if(requestCode == RC_SIGN_IN){

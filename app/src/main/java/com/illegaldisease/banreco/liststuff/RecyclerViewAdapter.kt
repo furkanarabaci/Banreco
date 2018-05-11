@@ -3,7 +3,6 @@ package com.illegaldisease.banreco.liststuff
 import android.content.Context
 import android.support.design.widget.FloatingActionButton
 import android.support.v7.widget.RecyclerView
-import android.text.format.DateFormat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,7 +13,6 @@ import com.illegaldisease.banreco.databaserelated.EventHandler
 import com.illegaldisease.banreco.databaserelated.EventsRemastered
 
 import com.illegaldisease.banreco.liststuff.ItemFragment.OnListFragmentInteractionListener
-import java.util.*
 import android.content.Intent
 import android.util.Log
 import com.illegaldisease.banreco.activities.ImageActivity

@@ -24,7 +24,7 @@ class ItemFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        EventHandler.fillOutTables(context!!)
+
         arguments?.let {
             columnCount = it.getInt(ARG_COLUMN_COUNT)
         }

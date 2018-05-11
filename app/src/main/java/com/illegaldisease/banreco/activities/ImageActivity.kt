@@ -71,7 +71,7 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
         }
         else{ //If we reached this by clicking photo on logs or events, go here.
             val bitmapDate = intent.getSerializableExtra("Bitmap") as Int
-            imageView.setImageBitmap(EventHandler.convertToBitmap(this,bitmapDate).rotate(90F))
+            imageView.setImageBitmap(EventHandler.convertToBitmap(this,bitmapDate))
         }
     }
     private fun Bitmap.rotate(degrees: Float): Bitmap {
