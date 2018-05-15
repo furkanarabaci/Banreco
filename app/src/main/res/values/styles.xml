@@ -23,4 +23,10 @@
 
     <style name="PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
+    <style name="fab" parent="Widget.Design.FloatingActionButton" >
+        <item name="backgroundTint">@android:color/transparent</item>
+        <item name="borderWidth">0dp</item>
+        <item name="elevation">0dp</item>
+    </style>
+
 </resources>
