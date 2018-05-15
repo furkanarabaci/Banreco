@@ -104,7 +104,7 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
         setTimeButton.setOnClickListener { pickTime() }
         doneButton.setOnClickListener {
             try{
-                //TODO: Properly check if user set the time. Otherwise current date will be entered.
+                //I reset the time when we open here.
                 saveToFile(EventHandler.lastImageBitmap,lastEventDate.timeInMillis / 1000) //It takes current time if we could not detect the time.
                 EventHandler.addEvent(this, EventModel(0,(lastEventDate.timeInMillis / 1000).toInt()))
                 addToGoogleCalendar()
@@ -152,8 +152,7 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
     @Throws(IOException::class)
     private fun saveToFile(bitmap: Bitmap, date : Long) {
         if (checkIfFileExists(date.toInt())) {
-            //There is already an event that exact time.
-            //TODO: Warn user about this.
+            sameEventExistAlert()
         }
         val filePath = File(filesDir.toURI())
         val imageFile = File(filePath.absolutePath
@@ -210,7 +209,7 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
             val mBuilder = NotificationCompat.Builder(this, "banreco")
                     .setSmallIcon(R.mipmap.logo)
                     .setContentTitle("You have one event")
-                    .setContentText("test") //TODO: Change later.
+                    .setContentText("test") //Configure here.
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setContentIntent(pendingIntent)
                     .setAutoCancel(true)
@@ -224,13 +223,14 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
             val cr = contentResolver
             val values = ContentValues()
             values.put(DTSTART, lastEventDate.timeInMillis)
-            values.put(DTEND, lastEventDate.timeInMillis + 10000) //TODO: Random end date, change maybe.
+            values.put(DTEND, lastEventDate.timeInMillis + 10000)
             values.put(TITLE, "BanrecoEvent")
             values.put(DESCRIPTION, "Custom event added by banreco")
             values.put(CALENDAR_ID, calID)
             values.put(EVENT_TIMEZONE, "Turkey/Istanbul")
             val uri = cr.insert(CONTENT_URI, values)
-            val eventID = uri.lastPathSegment.toLong() //TODO: Save this to database, maybe.
+            val eventID = uri.lastPathSegment.toLong()
+            //TODO: Google says that you might need event id, maybe make use of it ?
         }
         else{
             ActivityCompat.requestPermissions(this,
@@ -247,8 +247,7 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
                 } else {
                     val builder = AlertDialog.Builder(this)
                     builder.setTitle("Permission")
-                            .setMessage("You did not permit me to insert event to the calendar, so it will not be saved. " +
-                                    "But you can still see your events under this application.") //TODO: No hardcoded string, move these to res
+                            .setMessage(R.string.calendarpermissiondenied)
                             .setPositiveButton(R.string.ok) { it, _ ->
                                 it.dismiss()
                             }
@@ -263,5 +262,14 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
                 // Ignore all other requests.
             }
         }
+    }
+    private fun sameEventExistAlert(){
+        val builder = AlertDialog.Builder(this)
+        //TODO: Set the buttons for this and decide what to do.
+        builder.setTitle(R.string.sameeventexists)
+                .setMessage(R.string.no_camera_permission)
+//                .setPositiveButton(R.string.ok, listener)
+//                .setNegativeButton("Grant", grantListener)
+                .show()
     }
 }

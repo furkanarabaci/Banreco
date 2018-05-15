@@ -3,6 +3,7 @@ package com.illegaldisease.banreco.activities
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
+import com.illegaldisease.banreco.BuildConfig
 import com.illegaldisease.banreco.R
 import mehdi.sakout.aboutpage.AboutPage
 import mehdi.sakout.aboutpage.Element
@@ -15,10 +16,10 @@ class AboutActivity : AppCompatActivity() {
     }
     private fun createAboutPage() : View {
         val versionElement = Element()
-        versionElement.title = "Version 1.0.0" //TODO: Take this from build.gradle somehow.
+        versionElement.title = BuildConfig.VERSION_NAME
         return AboutPage(this)
                 .isRTL(false)
-                .setDescription("Text recognition supported by Google Vision API")
+                .setDescription(getString(R.string.description))
                 .setImage(R.mipmap.logo_foreground)
                 .addItem(versionElement)
 //                .addGroup("Connect with us")

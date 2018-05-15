@@ -44,6 +44,11 @@
     I am not responsible for crashes if you tap I WANNA TRY and i will ignore your reviews or issues.</string>
 
     <string name="dateparsefailed">We could not detect the time.</string>
+
+    <string name="description">Text recognition supported by Google Vision API</string>
+    <string name="sameeventexists">The same event exists for that exact date. Choose action : </string>
+    <string name="calendarpermissiondenied">You did not permit me to insert event to the calendar, so it will not be saved. " +
+                                    "But you can still see your events under this application.</string>
     <!-- Strings related to Settings -->
 
     <!-- Example General settings -->
