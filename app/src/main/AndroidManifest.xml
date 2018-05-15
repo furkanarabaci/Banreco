@@ -30,7 +30,7 @@
                 android:resource="@xml/file_provider_paths" />
         </provider>
 
-        <activity android:name=".camera.CameraActivity">
+        <activity android:name=".activities.CameraActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

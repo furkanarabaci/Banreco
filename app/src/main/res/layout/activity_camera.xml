@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true">
     <fragment
-        android:name="com.illegaldisease.banreco.camera.CameraFragment"
+        android:name="com.illegaldisease.banreco.activities.CameraFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/fragmentCamera" />

@@ -1,9 +1,8 @@
 @file:Suppress("DEPRECATION")
-package com.illegaldisease.banreco.camera
+package com.illegaldisease.banreco.activities
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.app.AlertDialog
 import android.content.*
 import android.content.pm.PackageManager
@@ -29,9 +28,10 @@ import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.vision.text.TextRecognizer
 
 import com.illegaldisease.banreco.R
-import com.illegaldisease.banreco.activities.ImageActivity
+import com.illegaldisease.banreco.camera.CameraSource
+import com.illegaldisease.banreco.camera.CameraSourcePreview
+import com.illegaldisease.banreco.camera.GraphicOverlay
 import com.illegaldisease.banreco.databaserelated.EventHandler
-import com.illegaldisease.banreco.databaserelated.EventModel
 import com.illegaldisease.banreco.ocrstuff.OcrDetectorProcessor
 import com.illegaldisease.banreco.ocrstuff.OcrGraphic
 import com.illegaldisease.banreco.ocrstuff.OcrHandler
@@ -40,9 +40,6 @@ import com.treebo.internetavailabilitychecker.InternetAvailabilityChecker
 import com.treebo.internetavailabilitychecker.InternetConnectivityListener
 import org.jetbrains.anko.doAsync
 
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.FileOutputStream
 import java.io.IOException
 
 /**
@@ -222,7 +219,7 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
         }
     }
     private fun requestCameraPermission() {
-        Log.w(CameraFragment.TAG, "Camera permission is not granted. Requesting permission")
+        Log.w(TAG, "Camera permission is not granted. Requesting permission")
 
         val permissions = arrayOf(Manifest.permission.CAMERA)
 
@@ -265,7 +262,7 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
             val hasLowStorage = activity!!.registerReceiver(null, lowstorageFilter) != null
             if (hasLowStorage) {
                 Toast.makeText(activity!!, R.string.low_storage_error, Toast.LENGTH_LONG).show()
-                Log.w(CameraFragment.TAG, getString(R.string.low_storage_error))
+                Log.w(TAG, getString(R.string.low_storage_error))
             }
         }
         else{
@@ -297,7 +294,7 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
             photoButton.show()
         }
         catch (e : IOException) {
-            Log.e(CameraFragment.TAG, "Unable to start camera source.", e)
+            Log.e(TAG, "Unable to start camera source.", e)
             mCameraSource.release()
             //mCameraSource = null
         }
@@ -351,18 +348,18 @@ class CameraFragment : Fragment(), InternetConnectivityListener {
     }
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         if (requestCode != RC_HANDLE_CAMERA_PERM) {
-            Log.d(CameraFragment.TAG, "Got unexpected permission result: $requestCode")
+            Log.d(TAG, "Got unexpected permission result: $requestCode")
             super.onRequestPermissionsResult(requestCode, permissions, grantResults)
             return
         }
 
         if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            Log.d(CameraFragment.TAG, "Camera permission granted - initialize the camera source")
+            Log.d(TAG, "Camera permission granted - initialize the camera source")
             buildCamera()
             return
         }
 
-        Log.e(CameraFragment.TAG, """Permission not granted: results len = ${grantResults.size} Result code = ${if (grantResults.isNotEmpty()) grantResults[0] else "(empty)"}""")
+        Log.e(TAG, """Permission not granted: results len = ${grantResults.size} Result code = ${if (grantResults.isNotEmpty()) grantResults[0] else "(empty)"}""")
         cameraPermissionDeniedDialog()
 
     }

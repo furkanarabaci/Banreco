@@ -1,4 +1,4 @@
-package com.illegaldisease.banreco.camera
+package com.illegaldisease.banreco.activities
 
 import android.app.Activity
 import android.content.*
@@ -27,15 +27,9 @@ import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 
 import com.illegaldisease.banreco.R
-import com.illegaldisease.banreco.activities.AboutActivity
-import com.illegaldisease.banreco.activities.EventsActivity
-import com.illegaldisease.banreco.activities.LogsActivity
-import com.illegaldisease.banreco.activities.SettingsActivity
 import com.illegaldisease.banreco.databaserelated.EventHandler
 
 import com.treebo.internetavailabilitychecker.InternetAvailabilityChecker
-import mehdi.sakout.aboutpage.AboutPage
-import mehdi.sakout.aboutpage.Element
 
 
 class CameraActivity : AppCompatActivity(), CameraFragment.MyFragmentCallback {
