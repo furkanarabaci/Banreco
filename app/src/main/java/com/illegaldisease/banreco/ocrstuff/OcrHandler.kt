@@ -38,7 +38,7 @@ class OcrHandler(private var graphicsList : Set<OcrGraphic>){
     private fun checkMonthString(string : String) : Int{
         monthList.forEachIndexed { index, s ->
             if(s.toLowerCase() == string.toLowerCase()){
-                return index //If we find month, how lucky. Just fork it over.
+                return index + 1 //If we find month, how lucky. Just fork it over.
             }
         }
         return -1
@@ -56,14 +56,19 @@ class OcrHandler(private var graphicsList : Set<OcrGraphic>){
         }
     }
     fun tryToParse(){
+        day = -1 //1-30
+        month = -1 //0 = january, 11 = december etc..
+        year = -1 //4 numbered character.
+        hour = -1 //1-60
+        minute = -1 //1-60
         stringList.forEach {
             try {
                 when {
-                    day == -1 -> { day = parseDay(it); return@forEach}
-                    month == -1 || checkMonthString(it) > -1 -> { month = parseMonth(it) ; return@forEach}
-                    year == -1 -> { year = parseYear(it) ; return@forEach}
-                    hour == -1 -> { hour = parseHour(it) ; return@forEach}
-                    minute == -1 -> { minute = parseMinute(it) ; return@forEach}
+                    day == -1 -> { day = parseDay(it); if(day > -1) return@forEach}
+                    month == -1 || checkMonthString(it) > -1 -> { month = parseMonth(it) ; if(month > -1) return@forEach}
+                    year == -1 -> { year = parseYear(it) ; if(year > -1) return@forEach}
+                    hour == -1 -> { hour = parseHour(it) ; if(hour > -1) return@forEach}
+                    minute == -1 -> { minute = parseMinute(it) ; if(minute > -1) return@forEach}
 
                 }
                 //If returnedValue could not be parsed, it will go to catch and continue.
@@ -98,7 +103,7 @@ class OcrHandler(private var graphicsList : Set<OcrGraphic>){
             return parseNumbers(string,4,4,1000,9999)
         }
         catch (e : NumberFormatException){
-            throw NumberFormatException(e.message) //It is like volleyball, we redirected our try catch.....
+            throw NumberFormatException(e.message)
         }
     }
     @Throws(NumberFormatException::class)
@@ -107,7 +112,7 @@ class OcrHandler(private var graphicsList : Set<OcrGraphic>){
             return parseNumbers(string,1,2,0,60)
         }
         catch (e : NumberFormatException){
-            throw NumberFormatException(e.message) //It is like volleyball, we redirected our try catch.....
+            throw NumberFormatException(e.message)
         }
     }
     @Throws(NumberFormatException::class)

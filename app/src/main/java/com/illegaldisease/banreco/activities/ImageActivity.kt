@@ -67,7 +67,7 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
 
         if(willShowButtons){ //If we reached this by clicking photo button, go here.
             buttonActions()
-            imageView.setImageBitmap(EventHandler.lastImageBitmap.rotate(90F))
+            imageView.setImageBitmap(EventHandler.lastImageBitmap)
         }
         else{ //If we reached this by clicking photo on logs or events, go here.
             val bitmapDate = intent.getSerializableExtra("Bitmap") as Int
@@ -181,7 +181,9 @@ class ImageActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener,Da
     private fun tryAutomaticMethod(){
         //We will use the data we already created in CameraFragment.
         val parseToTry = OcrHandler.getRenderedDate() //day,month(0-11),year,hour,minute
+        dateTextView.text = getString(R.string.dateparsefailed)
         try{
+            Log.d("testmeup",parseToTry)
             val date = format.parse(parseToTry)
             dateTextView.text = format.format(date)
             lastEventDate.time = date //Make it automatic.
